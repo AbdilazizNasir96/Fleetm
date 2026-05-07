@@ -55,7 +55,7 @@ function layout(title: string, body: string): string {
 
         <!-- Header -->
         <tr>
-          <td style="background:#4d8cff;border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
+          <td style="background:#2563EB;border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
             <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">🚌 Digivant Solutions</span>
           </td>
         </tr>
@@ -80,11 +80,11 @@ function layout(title: string, body: string): string {
 }
 
 function button(text: string, href: string): string {
-  return `<a href="${href}" style="display:inline-block;background:#4d8cff;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;margin:24px 0;">${text}</a>`;
+  return `<a href="${href}" style="display:inline-block;background:#2563EB;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;margin:24px 0;">${text}</a>`;
 }
 
 function h1(text: string): string {
-  return `<h1 style="font-size:24px;font-weight:700;color:#2b5bb3;margin:0 0 8px;">${text}</h1>`;
+  return `<h1 style="font-size:24px;font-weight:700;color:#0A2540;margin:0 0 8px;">${text}</h1>`;
 }
 
 function p(text: string): string {
