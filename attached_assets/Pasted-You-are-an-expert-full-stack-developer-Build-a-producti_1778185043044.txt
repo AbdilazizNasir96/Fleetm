@@ -1,0 +1,232 @@
+You are an expert full‑stack developer. Build a production‑ready, multi‑tenant SaaS platform for school student transportation called **ProjectTnW**. Optimise it for easy Azure deployment later, but make it work locally with zero Azure services via fallbacks. No AI/OpenAI integration.
+
+**Local development fallbacks (essential):**
+- If `AZURE_STORAGE_CONNECTION_STRING` is not set, save incident photos to local disk (`./uploads`) and serve via Express static.
+- If `REDIS_URL` is not set, use in‑memory Socket.IO adapter (single process).
+- If `SENDGRID_API_KEY` is not set, log all emails to console in `NODE_ENV=development`.
+- PostgreSQL with PostGIS is required – use `DATABASE_URL` (local or remote).
+
+**When the same code runs on Azure** (with connection strings set), it will automatically use Azure Blob Storage, Azure Redis Cache, and SendGrid. No code changes needed.
+
+**All features:** multi‑tenant, single user can belong to multiple tenants (user_tenants join table), tenant switcher dropdown, super‑admin dashboard, real‑time vehicle tracking (Socket.IO), Stripe billing, demo tenant (writes blocked), trial mode (time‑limited), incident reporting with photos, route/stops management, driver/student/parent portals.
+
+---
+
+## Database Schema (Drizzle ORM with PostGIS)
+
+Use the following tables exactly. All geometry columns must use PostGIS `geometry` types (srid 4326). Enable PostGIS extension first: `CREATE EXTENSION IF NOT EXISTS postgis;`
+
+```typescript
+// tenants
+export const tenants = pgTable('tenants', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  slug: text('slug').unique().notNull(),
+  isDemo: boolean('is_demo').default(false),
+  plan: text('plan').default('trial'), // trial, basic, pro, enterprise
+  billingStatus: text('billing_status').default('active'),
+  trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+  settings: jsonb('settings').default({}),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+// users (no tenant_id column)
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').unique().notNull(),
+  passwordHash: text('password_hash').notNull(),
+  fullName: text('full_name'),
+  isActive: boolean('is_active').default(true),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// user_tenants (join table)
+export const userTenants = pgTable('user_tenants', {
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+  role: text('role').notNull(), // admin, dispatcher, driver, parent
+  createdAt: timestamp('created_at').defaultNow(),
+}, (t) => ({
+  pk: primaryKey(t.userId, t.tenantId),
+}));
+
+// invitations
+export const invitations = pgTable('invitations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  role: text('role').notNull(),
+  tokenHash: text('token_hash').unique().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// vehicles
+export const vehicles = pgTable('vehicles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  licensePlate: text('license_plate').notNull(),
+  capacity: integer('capacity').notNull(),
+  status: text('status').default('active'),
+  lastMaintenanceAt: timestamp('last_maintenance_at', { withTimezone: true }),
+  currentOdometer: integer('current_odometer'),
+  metadata: jsonb('metadata'),
+});
+
+// drivers (linked to a user)
+export const drivers = pgTable('drivers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).unique(),
+  licenseNumber: text('license_number').notNull(),
+  phone: text('phone'),
+  hireDate: date('hire_date'),
+  assignedVehicleId: uuid('assigned_vehicle_id').references(() => vehicles.id),
+});
+
+// routes (with PostGIS LINESTRING)
+export const routes = pgTable('routes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  direction: text('direction'),
+  geometry: geometry('geometry', { type: 'linestring', srid: 4326 }),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// stops (with PostGIS POINT)
+export const stops = pgTable('stops', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  routeId: uuid('route_id').references(() => routes.id, { onDelete: 'cascade' }),
+  sequence: smallint('sequence').notNull(),
+  name: text('name'),
+  location: geometry('location', { type: 'point', srid: 4326 }).notNull(),
+  pickupWindowStart: time('pickup_window_start'),
+  pickupWindowEnd: time('pickup_window_end'),
+});
+
+// students
+export const students = pgTable('students', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  schoolName: text('school_name'),
+  grade: integer('grade'),
+  homeStopId: uuid('home_stop_id').references(() => stops.id),
+  boardingTime: time('boarding_time'),
+  alightingTime: time('alighting_time'),
+  emergencyContact: text('emergency_contact'),
+  specialNeeds: text('special_needs'),
+});
+
+// parents (linked to a user)
+export const parents = pgTable('parents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).unique(),
+  phone: text('phone'),
+});
+
+// student_parents
+export const studentParents = pgTable('student_parents', {
+  studentId: uuid('student_id').references(() => students.id, { onDelete: 'cascade' }),
+  parentId: uuid('parent_id').references(() => parents.id, { onDelete: 'cascade' }),
+}, (t) => ({
+  pk: primaryKey(t.studentId, t.parentId),
+}));
+
+// trips
+export const trips = pgTable('trips', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  routeId: uuid('route_id').references(() => routes.id).notNull(),
+  vehicleId: uuid('vehicle_id').references(() => vehicles.id).notNull(),
+  driverId: uuid('driver_id').references(() => drivers.id).notNull(),
+  scheduledStart: timestamp('scheduled_start', { withTimezone: true }).notNull(),
+  scheduledEnd: timestamp('scheduled_end', { withTimezone: true }),
+  actualStart: timestamp('actual_start', { withTimezone: true }),
+  actualEnd: timestamp('actual_end', { withTimezone: true }),
+  status: text('status').default('scheduled'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// trip_locations
+export const tripLocations = pgTable('trip_locations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tripId: uuid('trip_id').references(() => trips.id, { onDelete: 'cascade' }),
+  recordedAt: timestamp('recorded_at', { withTimezone: true }).defaultNow().notNull(),
+  location: geometry('location', { type: 'point', srid: 4326 }).notNull(),
+  speedKmh: numeric('speed_kmh', { precision: 6, scale: 2 }),
+  heading: smallint('heading'),
+});
+
+// trip_passengers
+export const tripPassengers = pgTable('trip_passengers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tripId: uuid('trip_id').references(() => trips.id, { onDelete: 'cascade' }),
+  studentId: uuid('student_id').references(() => students.id),
+  boardedAt: timestamp('boarded_at', { withTimezone: true }),
+  alightedAt: timestamp('alighted_at', { withTimezone: true }),
+  notes: text('notes'),
+});
+
+// incidents
+export const incidents = pgTable('incidents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  tripId: uuid('trip_id').references(() => trips.id),
+  vehicleId: uuid('vehicle_id').references(() => vehicles.id),
+  reportedBy: uuid('reported_by').references(() => users.id),
+  incidentType: text('incident_type').notNull(),
+  description: text('description'),
+  location: geometry('location', { type: 'point', srid: 4326 }),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+  isResolved: boolean('is_resolved').default(false),
+  resolutionNotes: text('resolution_notes'),
+  mediaUrls: text('media_urls').array(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// maintenance_logs
+export const maintenanceLogs = pgTable('maintenance_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  vehicleId: uuid('vehicle_id').references(() => vehicles.id).notNull(),
+  maintenanceType: text('maintenance_type'),
+  performedAt: timestamp('performed_at', { withTimezone: true }).notNull(),
+  costCents: integer('cost_cents'),
+  notes: text('notes'),
+});
+
+// audit_logs (tenant‑specific)
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  userId: uuid('user_id').references(() => users.id),
+  action: text('action').notNull(),
+  entityType: text('entity_type'),
+  entityId: uuid('entity_id'),
+  oldData: jsonb('old_data'),
+  newData: jsonb('new_data'),
+  ipAddress: inet('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// platform_audit_log
+export const platformAuditLog = pgTable('platform_audit_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  superAdminUserId: uuid('super_admin_user_id').references(() => users.id),
+  action: text('action').notNull(),
+  targetTenantId: uuid('target_tenant_id').references(() => tenants.id),
+  targetUserId: uuid('target_user_id').references(() => users.id),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow(),
+});

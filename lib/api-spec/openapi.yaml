@@ -1,22 +1,51 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ProjectTnW - Multi-tenant School Transportation SaaS API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: tenants
+    description: Tenant management
+  - name: users
+    description: User management
+  - name: vehicles
+    description: Vehicle management
+  - name: drivers
+    description: Driver management
+  - name: routes
+    description: Route management
+  - name: stops
+    description: Stop management
+  - name: students
+    description: Student management
+  - name: parents
+    description: Parent management
+  - name: trips
+    description: Trip management
+  - name: incidents
+    description: Incident reporting
+  - name: maintenance
+    description: Maintenance logs
+  - name: dashboard
+    description: Dashboard summaries
+  - name: super-admin
+    description: Super-admin platform management
+  - name: invitations
+    description: Invitation management
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +53,1381 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ───
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Register a new user and create a tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags: [auth]
+      summary: Logout
+      responses:
+        "204":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user and their tenants
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/switch-tenant:
+    post:
+      operationId: switchTenant
+      tags: [auth]
+      summary: Switch active tenant context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwitchTenantBody"
+      responses:
+        "200":
+          description: Switched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── TENANTS ───
+  /tenants/current:
+    get:
+      operationId: getCurrentTenant
+      tags: [tenants]
+      summary: Get current tenant details
+      responses:
+        "200":
+          description: Tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+    patch:
+      operationId: updateCurrentTenant
+      tags: [tenants]
+      summary: Update current tenant settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTenantBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  # ─── USERS (within tenant) ───
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users in current tenant
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TenantUser"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantUser"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateUserRole
+      tags: [users]
+      summary: Update a user's role in the tenant
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRoleBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantUser"
+
+    delete:
+      operationId: removeUserFromTenant
+      tags: [users]
+      summary: Remove a user from the tenant
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Removed
+
+  # ─── INVITATIONS ───
+  /invitations:
+    get:
+      operationId: listInvitations
+      tags: [invitations]
+      summary: List pending invitations
+      responses:
+        "200":
+          description: Invitations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invitation"
+
+    post:
+      operationId: createInvitation
+      tags: [invitations]
+      summary: Send an invitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvitationBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invitation"
+
+  /invitations/{invitationId}:
+    delete:
+      operationId: deleteInvitation
+      tags: [invitations]
+      summary: Cancel an invitation
+      parameters:
+        - in: path
+          name: invitationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /invitations/accept:
+    post:
+      operationId: acceptInvitation
+      tags: [invitations]
+      summary: Accept an invitation token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptInvitationBody"
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── VEHICLES ───
+  /vehicles:
+    get:
+      operationId: listVehicles
+      tags: [vehicles]
+      summary: List vehicles
+      responses:
+        "200":
+          description: Vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+
+    post:
+      operationId: createVehicle
+      tags: [vehicles]
+      summary: Create a vehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVehicleBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+
+  /vehicles/{vehicleId}:
+    get:
+      operationId: getVehicle
+      tags: [vehicles]
+      summary: Get a vehicle
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Vehicle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateVehicle
+      tags: [vehicles]
+      summary: Update a vehicle
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVehicleBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+
+    delete:
+      operationId: deleteVehicle
+      tags: [vehicles]
+      summary: Delete a vehicle
+      parameters:
+        - in: path
+          name: vehicleId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── DRIVERS ───
+  /drivers:
+    get:
+      operationId: listDrivers
+      tags: [drivers]
+      summary: List drivers
+      responses:
+        "200":
+          description: Drivers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Driver"
+
+    post:
+      operationId: createDriver
+      tags: [drivers]
+      summary: Create a driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDriverBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /drivers/{driverId}:
+    get:
+      operationId: getDriver
+      tags: [drivers]
+      summary: Get a driver
+      parameters:
+        - in: path
+          name: driverId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Driver
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateDriver
+      tags: [drivers]
+      summary: Update a driver
+      parameters:
+        - in: path
+          name: driverId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDriverBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+    delete:
+      operationId: deleteDriver
+      tags: [drivers]
+      summary: Delete a driver
+      parameters:
+        - in: path
+          name: driverId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── ROUTES ───
+  /routes:
+    get:
+      operationId: listRoutes
+      tags: [routes]
+      summary: List routes
+      responses:
+        "200":
+          description: Routes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Route"
+
+    post:
+      operationId: createRoute
+      tags: [routes]
+      summary: Create a route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRouteBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+
+  /routes/{routeId}:
+    get:
+      operationId: getRoute
+      tags: [routes]
+      summary: Get a route with its stops
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Route
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteWithStops"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateRoute
+      tags: [routes]
+      summary: Update a route
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRouteBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+
+    delete:
+      operationId: deleteRoute
+      tags: [routes]
+      summary: Delete a route
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── STOPS ───
+  /routes/{routeId}/stops:
+    get:
+      operationId: listStops
+      tags: [stops]
+      summary: List stops for a route
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Stop"
+
+    post:
+      operationId: createStop
+      tags: [stops]
+      summary: Create a stop on a route
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStopBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stop"
+
+  /routes/{routeId}/stops/{stopId}:
+    patch:
+      operationId: updateStop
+      tags: [stops]
+      summary: Update a stop
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: stopId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStopBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stop"
+
+    delete:
+      operationId: deleteStop
+      tags: [stops]
+      summary: Delete a stop
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: stopId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── STUDENTS ───
+  /students:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List students
+      parameters:
+        - in: query
+          name: routeId
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Create a student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/{studentId}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get a student
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateStudent
+      tags: [students]
+      summary: Update a student
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStudentBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+    delete:
+      operationId: deleteStudent
+      tags: [students]
+      summary: Delete a student
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── PARENTS ───
+  /parents:
+    get:
+      operationId: listParents
+      tags: [parents]
+      summary: List parents
+      responses:
+        "200":
+          description: Parents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Parent"
+
+    post:
+      operationId: createParent
+      tags: [parents]
+      summary: Create a parent record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateParentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parent"
+
+  /parents/{parentId}/students:
+    get:
+      operationId: listParentStudents
+      tags: [parents]
+      summary: Get students linked to a parent
+      parameters:
+        - in: path
+          name: parentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+
+    post:
+      operationId: linkStudentToParent
+      tags: [parents]
+      summary: Link a student to a parent
+      parameters:
+        - in: path
+          name: parentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkStudentBody"
+      responses:
+        "201":
+          description: Linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ─── TRIPS ───
+  /trips:
+    get:
+      operationId: listTrips
+      tags: [trips]
+      summary: List trips
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: driverId
+          schema:
+            type: string
+        - in: query
+          name: routeId
+          schema:
+            type: string
+        - in: query
+          name: date
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+
+    post:
+      operationId: createTrip
+      tags: [trips]
+      summary: Schedule a trip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTripBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+
+  /trips/{tripId}:
+    get:
+      operationId: getTrip
+      tags: [trips]
+      summary: Get a trip with passengers
+      parameters:
+        - in: path
+          name: tripId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateTrip
+      tags: [trips]
+      summary: Update trip status
+      parameters:
+        - in: path
+          name: tripId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTripBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+
+  /trips/{tripId}/passengers:
+    post:
+      operationId: addPassenger
+      tags: [trips]
+      summary: Add a passenger to a trip
+      parameters:
+        - in: path
+          name: tripId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPassengerBody"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripPassenger"
+
+  /trips/{tripId}/passengers/{passengerId}:
+    patch:
+      operationId: updatePassenger
+      tags: [trips]
+      summary: Update passenger boarding/alighting
+      parameters:
+        - in: path
+          name: tripId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: passengerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePassengerBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripPassenger"
+
+  # ─── INCIDENTS ───
+  /incidents:
+    get:
+      operationId: listIncidents
+      tags: [incidents]
+      summary: List incidents
+      parameters:
+        - in: query
+          name: isResolved
+          schema:
+            type: string
+        - in: query
+          name: incidentType
+          schema:
+            type: string
+        - in: query
+          name: vehicleId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Incident"
+
+    post:
+      operationId: createIncident
+      tags: [incidents]
+      summary: Report an incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIncidentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+
+  /incidents/{incidentId}:
+    get:
+      operationId: getIncident
+      tags: [incidents]
+      summary: Get an incident
+      parameters:
+        - in: path
+          name: incidentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Incident
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateIncident
+      tags: [incidents]
+      summary: Update or resolve an incident
+      parameters:
+        - in: path
+          name: incidentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateIncidentBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+
+  # ─── MAINTENANCE ───
+  /maintenance:
+    get:
+      operationId: listMaintenanceLogs
+      tags: [maintenance]
+      summary: List maintenance logs
+      parameters:
+        - in: query
+          name: vehicleId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceLog"
+
+    post:
+      operationId: createMaintenanceLog
+      tags: [maintenance]
+      summary: Log a maintenance event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMaintenanceLogBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceLog"
+
+  /maintenance/{logId}:
+    patch:
+      operationId: updateMaintenanceLog
+      tags: [maintenance]
+      summary: Update a maintenance log
+      parameters:
+        - in: path
+          name: logId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMaintenanceLogBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceLog"
+
+    delete:
+      operationId: deleteMaintenanceLog
+      tags: [maintenance]
+      summary: Delete a maintenance log
+      parameters:
+        - in: path
+          name: logId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── DASHBOARD ───
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get tenant dashboard summary stats
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/trips-today:
+    get:
+      operationId: getTripsToday
+      tags: [dashboard]
+      summary: Get today's trips with real-time status
+      responses:
+        "200":
+          description: Today's trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+
+  /dashboard/vehicle-status:
+    get:
+      operationId: getVehicleStatus
+      tags: [dashboard]
+      summary: Get current status of all vehicles
+      responses:
+        "200":
+          description: Vehicle statuses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleStatus"
+
+  # ─── SUPER ADMIN ───
+  /admin/tenants:
+    get:
+      operationId: adminListTenants
+      tags: [super-admin]
+      summary: List all tenants (super-admin)
+      responses:
+        "200":
+          description: Tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+
+    post:
+      operationId: adminCreateTenant
+      tags: [super-admin]
+      summary: Create a tenant (super-admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateTenantBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /admin/tenants/{tenantId}:
+    get:
+      operationId: adminGetTenant
+      tags: [super-admin]
+      summary: Get a tenant (super-admin)
+      parameters:
+        - in: path
+          name: tenantId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+    patch:
+      operationId: adminUpdateTenant
+      tags: [super-admin]
+      summary: Update tenant plan/status (super-admin)
+      parameters:
+        - in: path
+          name: tenantId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateTenantBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /admin/platform-stats:
+    get:
+      operationId: adminGetPlatformStats
+      tags: [super-admin]
+      summary: Get platform-wide stats (super-admin)
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [super-admin]
+      summary: List all users (super-admin)
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+
+  /admin/audit-log:
+    get:
+      operationId: adminGetAuditLog
+      tags: [super-admin]
+      summary: Get platform audit log
+      responses:
+        "200":
+          description: Audit log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlatformAuditEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +1438,1123 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # ─── AUTH ───
+    RegisterBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+        tenantName:
+          type: string
+        tenantSlug:
+          type: string
+      required:
+        - email
+        - password
+        - fullName
+        - tenantName
+        - tenantSlug
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    SwitchTenantBody:
+      type: object
+      properties:
+        tenantId:
+          type: string
+      required:
+        - tenantId
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        tenant:
+          $ref: "#/components/schemas/Tenant"
+        role:
+          type: string
+      required:
+        - token
+        - user
+        - tenant
+        - role
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        fullName:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        isSuperAdmin:
+          type: boolean
+        createdAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - email
+        - isActive
+        - isSuperAdmin
+
+    MeResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        tenants:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserTenantMembership"
+        currentTenant:
+          $ref: "#/components/schemas/Tenant"
+        currentRole:
+          type: string
+      required:
+        - user
+        - tenants
+
+    UserTenantMembership:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        tenantName:
+          type: string
+        tenantSlug:
+          type: string
+        role:
+          type: string
+      required:
+        - tenantId
+        - tenantName
+        - tenantSlug
+        - role
+
+    # ─── TENANT ───
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        isDemo:
+          type: ["boolean", "null"]
+        plan:
+          type: ["string", "null"]
+        billingStatus:
+          type: ["string", "null"]
+        trialEndsAt:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - slug
+
+    UpdateTenantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        settings:
+          type: object
+
+    # ─── USERS ───
+    TenantUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        fullName:
+          type: ["string", "null"]
+        role:
+          type: string
+        isActive:
+          type: ["boolean", "null"]
+        lastLoginAt:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - email
+        - role
+
+    UpdateUserRoleBody:
+      type: object
+      properties:
+        role:
+          type: string
+      required:
+        - role
+
+    # ─── INVITATIONS ───
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        expiresAt:
+          type: string
+        createdAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - email
+        - role
+        - expiresAt
+
+    CreateInvitationBody:
+      type: object
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+      required:
+        - email
+        - role
+
+    AcceptInvitationBody:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+      required:
+        - token
+
+    # ─── VEHICLES ───
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        licensePlate:
+          type: string
+        capacity:
+          type: integer
+        status:
+          type: ["string", "null"]
+        lastMaintenanceAt:
+          type: ["string", "null"]
+        currentOdometer:
+          type: ["integer", "null"]
+        metadata:
+          type: ["object", "null"]
+      required:
+        - id
+        - tenantId
+        - licensePlate
+        - capacity
+
+    CreateVehicleBody:
+      type: object
+      properties:
+        licensePlate:
+          type: string
+        capacity:
+          type: integer
+        status:
+          type: string
+        currentOdometer:
+          type: integer
+        metadata:
+          type: object
+      required:
+        - licensePlate
+        - capacity
+
+    UpdateVehicleBody:
+      type: object
+      properties:
+        licensePlate:
+          type: string
+        capacity:
+          type: integer
+        status:
+          type: string
+        lastMaintenanceAt:
+          type: string
+        currentOdometer:
+          type: integer
+
+    # ─── DRIVERS ───
+    Driver:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        userId:
+          type: ["string", "null"]
+        licenseNumber:
+          type: string
+        phone:
+          type: ["string", "null"]
+        hireDate:
+          type: ["string", "null"]
+        assignedVehicleId:
+          type: ["string", "null"]
+        fullName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        vehicleLicensePlate:
+          type: ["string", "null"]
+      required:
+        - id
+        - tenantId
+        - licenseNumber
+
+    CreateDriverBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        licenseNumber:
+          type: string
+        phone:
+          type: string
+        hireDate:
+          type: string
+        assignedVehicleId:
+          type: string
+      required:
+        - licenseNumber
+
+    UpdateDriverBody:
+      type: object
+      properties:
+        licenseNumber:
+          type: string
+        phone:
+          type: string
+        hireDate:
+          type: string
+        assignedVehicleId:
+          type: ["string", "null"]
+
+    # ─── ROUTES ───
+    Route:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        direction:
+          type: ["string", "null"]
+        isActive:
+          type: ["boolean", "null"]
+        stopCount:
+          type: ["integer", "null"]
+        createdAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - tenantId
+        - name
+
+    RouteWithStops:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        direction:
+          type: ["string", "null"]
+        isActive:
+          type: ["boolean", "null"]
+        createdAt:
+          type: ["string", "null"]
+        stops:
+          type: array
+          items:
+            $ref: "#/components/schemas/Stop"
+      required:
+        - id
+        - tenantId
+        - name
+        - stops
+
+    CreateRouteBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        direction:
+          type: string
+        isActive:
+          type: boolean
+      required:
+        - name
+
+    UpdateRouteBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        direction:
+          type: string
+        isActive:
+          type: boolean
+
+    # ─── STOPS ───
+    Stop:
+      type: object
+      properties:
+        id:
+          type: string
+        routeId:
+          type: ["string", "null"]
+        sequence:
+          type: integer
+        name:
+          type: ["string", "null"]
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        pickupWindowStart:
+          type: ["string", "null"]
+        pickupWindowEnd:
+          type: ["string", "null"]
+      required:
+        - id
+        - sequence
+
+    CreateStopBody:
+      type: object
+      properties:
+        sequence:
+          type: integer
+        name:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        pickupWindowStart:
+          type: string
+        pickupWindowEnd:
+          type: string
+      required:
+        - sequence
+        - latitude
+        - longitude
+
+    UpdateStopBody:
+      type: object
+      properties:
+        sequence:
+          type: integer
+        name:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        pickupWindowStart:
+          type: string
+        pickupWindowEnd:
+          type: string
+
+    # ─── STUDENTS ───
+    Student:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        schoolName:
+          type: ["string", "null"]
+        grade:
+          type: ["integer", "null"]
+        homeStopId:
+          type: ["string", "null"]
+        boardingTime:
+          type: ["string", "null"]
+        alightingTime:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        specialNeeds:
+          type: ["string", "null"]
+      required:
+        - id
+        - tenantId
+        - firstName
+        - lastName
+
+    StudentDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        schoolName:
+          type: ["string", "null"]
+        grade:
+          type: ["integer", "null"]
+        homeStopId:
+          type: ["string", "null"]
+        boardingTime:
+          type: ["string", "null"]
+        alightingTime:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        specialNeeds:
+          type: ["string", "null"]
+        parents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Parent"
+      required:
+        - id
+        - tenantId
+        - firstName
+        - lastName
+        - parents
+
+    CreateStudentBody:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        schoolName:
+          type: string
+        grade:
+          type: integer
+        homeStopId:
+          type: string
+        boardingTime:
+          type: string
+        alightingTime:
+          type: string
+        emergencyContact:
+          type: string
+        specialNeeds:
+          type: string
+      required:
+        - firstName
+        - lastName
+
+    UpdateStudentBody:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        schoolName:
+          type: string
+        grade:
+          type: integer
+        homeStopId:
+          type: ["string", "null"]
+        boardingTime:
+          type: string
+        alightingTime:
+          type: string
+        emergencyContact:
+          type: string
+        specialNeeds:
+          type: string
+
+    # ─── PARENTS ───
+    Parent:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        userId:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        fullName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+      required:
+        - id
+        - tenantId
+
+    CreateParentBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        phone:
+          type: string
+
+    LinkStudentBody:
+      type: object
+      properties:
+        studentId:
+          type: string
+      required:
+        - studentId
+
+    # ─── TRIPS ───
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        routeId:
+          type: string
+        vehicleId:
+          type: string
+        driverId:
+          type: string
+        scheduledStart:
+          type: string
+        scheduledEnd:
+          type: ["string", "null"]
+        actualStart:
+          type: ["string", "null"]
+        actualEnd:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+        routeName:
+          type: ["string", "null"]
+        driverName:
+          type: ["string", "null"]
+        vehicleLicensePlate:
+          type: ["string", "null"]
+        passengerCount:
+          type: ["integer", "null"]
+      required:
+        - id
+        - tenantId
+        - routeId
+        - vehicleId
+        - driverId
+        - scheduledStart
+
+    TripDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        routeId:
+          type: string
+        vehicleId:
+          type: string
+        driverId:
+          type: string
+        scheduledStart:
+          type: string
+        scheduledEnd:
+          type: ["string", "null"]
+        actualStart:
+          type: ["string", "null"]
+        actualEnd:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+        routeName:
+          type: ["string", "null"]
+        driverName:
+          type: ["string", "null"]
+        vehicleLicensePlate:
+          type: ["string", "null"]
+        passengers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TripPassenger"
+      required:
+        - id
+        - tenantId
+        - routeId
+        - vehicleId
+        - driverId
+        - scheduledStart
+        - passengers
+
+    CreateTripBody:
+      type: object
+      properties:
+        routeId:
+          type: string
+        vehicleId:
+          type: string
+        driverId:
+          type: string
+        scheduledStart:
+          type: string
+        scheduledEnd:
+          type: string
+      required:
+        - routeId
+        - vehicleId
+        - driverId
+        - scheduledStart
+
+    UpdateTripBody:
+      type: object
+      properties:
+        status:
+          type: string
+        actualStart:
+          type: string
+        actualEnd:
+          type: string
+
+    TripPassenger:
+      type: object
+      properties:
+        id:
+          type: string
+        tripId:
+          type: string
+        studentId:
+          type: ["string", "null"]
+        boardedAt:
+          type: ["string", "null"]
+        alightedAt:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        studentName:
+          type: ["string", "null"]
+      required:
+        - id
+        - tripId
+
+    AddPassengerBody:
+      type: object
+      properties:
+        studentId:
+          type: string
+        notes:
+          type: string
+      required:
+        - studentId
+
+    UpdatePassengerBody:
+      type: object
+      properties:
+        boardedAt:
+          type: string
+        alightedAt:
+          type: string
+        notes:
+          type: string
+
+    # ─── INCIDENTS ───
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        tripId:
+          type: ["string", "null"]
+        vehicleId:
+          type: ["string", "null"]
+        reportedBy:
+          type: ["string", "null"]
+        incidentType:
+          type: string
+        description:
+          type: ["string", "null"]
+        occurredAt:
+          type: string
+        isResolved:
+          type: ["boolean", "null"]
+        resolutionNotes:
+          type: ["string", "null"]
+        mediaUrls:
+          type: ["array", "null"]
+          items:
+            type: string
+        createdAt:
+          type: ["string", "null"]
+        reporterName:
+          type: ["string", "null"]
+        vehicleLicensePlate:
+          type: ["string", "null"]
+      required:
+        - id
+        - tenantId
+        - incidentType
+        - occurredAt
+
+    CreateIncidentBody:
+      type: object
+      properties:
+        tripId:
+          type: string
+        vehicleId:
+          type: string
+        incidentType:
+          type: string
+        description:
+          type: string
+        occurredAt:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        mediaUrls:
+          type: array
+          items:
+            type: string
+      required:
+        - incidentType
+        - occurredAt
+
+    UpdateIncidentBody:
+      type: object
+      properties:
+        description:
+          type: string
+        isResolved:
+          type: boolean
+        resolutionNotes:
+          type: string
+
+    # ─── MAINTENANCE ───
+    MaintenanceLog:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        vehicleId:
+          type: string
+        maintenanceType:
+          type: ["string", "null"]
+        performedAt:
+          type: string
+        costCents:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        vehicleLicensePlate:
+          type: ["string", "null"]
+      required:
+        - id
+        - tenantId
+        - vehicleId
+        - performedAt
+
+    CreateMaintenanceLogBody:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+        maintenanceType:
+          type: string
+        performedAt:
+          type: string
+        costCents:
+          type: integer
+        notes:
+          type: string
+      required:
+        - vehicleId
+        - performedAt
+
+    UpdateMaintenanceLogBody:
+      type: object
+      properties:
+        maintenanceType:
+          type: string
+        performedAt:
+          type: string
+        costCents:
+          type: integer
+        notes:
+          type: string
+
+    # ─── DASHBOARD ───
+    DashboardSummary:
+      type: object
+      properties:
+        totalVehicles:
+          type: integer
+        activeVehicles:
+          type: integer
+        totalDrivers:
+          type: integer
+        totalStudents:
+          type: integer
+        totalRoutes:
+          type: integer
+        activeRoutes:
+          type: integer
+        tripsToday:
+          type: integer
+        tripsInProgress:
+          type: integer
+        openIncidents:
+          type: integer
+        resolvedIncidentsThisMonth:
+          type: integer
+        tenantPlan:
+          type: ["string", "null"]
+        trialEndsAt:
+          type: ["string", "null"]
+      required:
+        - totalVehicles
+        - activeVehicles
+        - totalDrivers
+        - totalStudents
+        - totalRoutes
+        - activeRoutes
+        - tripsToday
+        - tripsInProgress
+        - openIncidents
+        - resolvedIncidentsThisMonth
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: ["string", "null"]
+        entityId:
+          type: ["string", "null"]
+        userId:
+          type: ["string", "null"]
+        userName:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - action
+
+    VehicleStatus:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+        licensePlate:
+          type: string
+        status:
+          type: ["string", "null"]
+        currentTripId:
+          type: ["string", "null"]
+        driverName:
+          type: ["string", "null"]
+        lastLatitude:
+          type: ["number", "null"]
+        lastLongitude:
+          type: ["number", "null"]
+        lastSeenAt:
+          type: ["string", "null"]
+      required:
+        - vehicleId
+        - licensePlate
+
+    # ─── SUPER ADMIN ───
+    AdminCreateTenantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        plan:
+          type: string
+        isDemo:
+          type: boolean
+        adminEmail:
+          type: string
+        adminPassword:
+          type: string
+        adminFullName:
+          type: string
+      required:
+        - name
+        - slug
+
+    AdminUpdateTenantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        plan:
+          type: string
+        billingStatus:
+          type: string
+        isDemo:
+          type: boolean
+        trialEndsAt:
+          type: string
+
+    PlatformStats:
+      type: object
+      properties:
+        totalTenants:
+          type: integer
+        activeTenants:
+          type: integer
+        trialTenants:
+          type: integer
+        totalUsers:
+          type: integer
+        totalVehicles:
+          type: integer
+        totalTrips:
+          type: integer
+        totalStudents:
+          type: integer
+        planBreakdown:
+          type: object
+      required:
+        - totalTenants
+        - activeTenants
+        - trialTenants
+        - totalUsers
+        - totalVehicles
+        - totalTrips
+        - totalStudents
+        - planBreakdown
+
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        fullName:
+          type: ["string", "null"]
+        isActive:
+          type: ["boolean", "null"]
+        isSuperAdmin:
+          type: boolean
+        lastLoginAt:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+        tenantCount:
+          type: integer
+      required:
+        - id
+        - email
+        - isSuperAdmin
+        - tenantCount
+
+    PlatformAuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        superAdminUserId:
+          type: ["string", "null"]
+        superAdminName:
+          type: ["string", "null"]
+        targetTenantId:
+          type: ["string", "null"]
+        targetTenantName:
+          type: ["string", "null"]
+        targetUserId:
+          type: ["string", "null"]
+        metadata:
+          type: ["object", "null"]
+        createdAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - action

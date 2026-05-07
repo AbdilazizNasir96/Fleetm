@@ -1,0 +1,42 @@
+import { BlobServiceClient, generateBlobSASQueryParameters, SASProtocol } from '@azure/storage-blob';
+import fs from 'fs/promises';
+import path from 'path';
+import multer from 'multer';
+
+const storageDriver = process.env.AZURE_STORAGE_CONNECTION_STRING ? 'azure' : 'local';
+const uploadDir = process.env.LOCAL_STORAGE_PATH || './uploads';
+if (storageDriver === 'local') await fs.mkdir(uploadDir, { recursive: true });
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post('/api/incidents/upload-url', authMiddleware, tenantMiddleware, async (req, res) => {
+  const { fileName, contentType } = req.body;
+  const blobName = `${req.tenantId}/${Date.now()}-${fileName}`;
+  if (storageDriver === 'azure') {
+    const containerClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING!)
+      .getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME || 'incidents');
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+    const sasToken = generateBlobSASQueryParameters({
+      containerName: containerClient.containerName,
+      blobName,
+      permissions: 'w',
+      startsOn: new Date(),
+      expiresOn: new Date(Date.now() + 5 * 60 * 1000),
+      contentType,
+      protocol: SASProtocol.Https,
+    }, blockBlobClient.credential).toString();
+    res.json({ uploadUrl: `${blockBlobClient.url}?${sasToken}`, blobUrl: blockBlobClient.url });
+  } else {
+    res.json({ uploadUrl: null, blobUrl: `/uploads/${blobName}` });
+  }
+});
+
+if (storageDriver === 'local') {
+  app.post('/api/incidents/upload-local', authMiddleware, tenantMiddleware, upload.single('file'), async (req, res) => {
+    const { blobName } = req.body;
+    const filePath = path.join(uploadDir, blobName);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, req.file!.buffer);
+    res.json({ blobUrl: `/uploads/${blobName}` });
+  });
+  app.use('/uploads', express.static(uploadDir));
+}
