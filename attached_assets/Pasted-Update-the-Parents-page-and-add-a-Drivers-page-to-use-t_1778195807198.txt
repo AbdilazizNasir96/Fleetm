@@ -1,0 +1,48 @@
+Update the Parents page and add a Drivers page to use the invitation flow. Do not remove any existing features.
+
+## For Parents Page (modify)
+
+Change the "Create Parent" form to:
+- Fields: email (required), fullName, phone, address.
+- When submitted:
+  1. Check if a user with this email exists in users table.
+  2. If not, create a new user (isActive = false, no password hash yet).
+  3. Create an invitation token (expires 7 days) for this user with role 'parent' and tenant_id = current tenant.
+  4. Send an invitation email (using existing sendEmail function) with a link: `/accept-invite/:token`.
+  5. Create the parent record (linked to the user_id).
+  6. If user already exists, create parent record linked to that user (and optionally send a notification that they've been added as a parent).
+- After creation, show a success message: "Invitation sent to email. They will be able to set their password and log in."
+- Remove the dropdown that only allowed selecting existing users. The form should accept email directly.
+
+Also update the edit form for parents to only allow editing phone/address (not email, not linking to a different user).
+
+## Add Drivers Page
+
+Create a new page `/app/drivers` (sidebar menu for admin/dispatcher).
+It should list drivers with columns: name (from user), license number, phone, assigned vehicle (optional), status.
+
+Add a "Create Driver" button with form:
+- email (required), fullName, licenseNumber, phone (optional).
+- On submit: same invitation flow as parents but with role 'driver'.
+- After invitation sent, create driver record (linked to user_id).
+- Drivers can later be assigned to a vehicle (via edit form).
+
+Include edit/delete for drivers (delete only removes driver record, not the user).
+
+## API Endpoints to add/modify:
+
+- `POST /api/drivers` – create driver (with user creation if needed, send invitation).
+- `GET /api/drivers` – list drivers for tenant.
+- `PUT /api/drivers/:id` – update license, phone, assignedVehicleId.
+- `DELETE /api/drivers/:id` – delete driver record (keep user).
+- Also ensure backend has `/api/invitations` endpoint to create invitation and send email (likely already exists, but confirm).
+
+## Email Template
+
+When sending invitation, use subject: "You have been invited to join [tenant name] as a [parent/driver]" and body: "Click here to set your password and activate your account: [invitation link]".
+
+## Seeding
+
+Update seed script to create at least one parent and one driver with invitation flow (or directly create activated users for demo).
+
+Apply these changes now.

@@ -261,6 +261,17 @@ publicRouter.post("/invitations/accept", async (req, res): Promise<void> => {
 
   if (existingUser) {
     userId = existingUser.id;
+    // If the user was pre-created by the invite flow (no passwordHash yet), set their password now
+    if (!existingUser.passwordHash) {
+      if (!password) {
+        res.status(400).json({ error: "Password required to activate your account" });
+        return;
+      }
+      const passwordHash = await bcrypt.hash(password, 12);
+      await db.update(users)
+        .set({ passwordHash, isActive: true, fullName: fullName ?? existingUser.fullName ?? null })
+        .where(eq(users.id, existingUser.id));
+    }
   } else {
     if (!password) {
       res.status(400).json({ error: "Password required for new account" });

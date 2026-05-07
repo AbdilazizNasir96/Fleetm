@@ -117,6 +117,10 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  if (!user.passwordHash) {
+    res.status(401).json({ error: "Account has no password set. Please accept your invitation email first." });
+    return;
+  }
   const passwordMatch = await bcrypt.compare(password, user.passwordHash);
   if (!passwordMatch) {
     res.status(401).json({ error: "Invalid credentials" });

@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { students, parents, studentParents, users, schools } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { inviteUser } from "../lib/invite";
 import {
   CreateStudentBody,
   UpdateStudentBody,
@@ -197,24 +198,47 @@ router.post("/parents", async (req, res): Promise<void> => {
     return;
   }
   const tenantId = req.user!.tenantId;
-  // Verify the user exists
-  const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.data.userId));
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
-    return;
+  const inviterId = req.user!.userId;
+  const { email, fullName, phone, address } = parsed.data;
+
+  // Check if user already has a parent record in this tenant
+  const [existingUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email));
+
+  if (existingUser) {
+    const [existingParent] = await db
+      .select({ id: parents.id })
+      .from(parents)
+      .where(and(eq(parents.userId, existingUser.id), eq(parents.tenantId, tenantId)));
+    if (existingParent) {
+      res.status(409).json({ error: "A parent record already exists for this email in this tenant" });
+      return;
+    }
   }
-  // Prevent duplicate parent record for same user in same tenant
-  const [existing] = await db
-    .select({ id: parents.id })
-    .from(parents)
-    .where(and(eq(parents.userId, parsed.data.userId), eq(parents.tenantId, tenantId)));
-  if (existing) {
-    res.status(409).json({ error: "A parent record already exists for this user in this tenant" });
-    return;
-  }
-  await db.insert(parents).values({ ...parsed.data, tenantId });
-  const parent = await parentWithUser(tenantId, (await db.select({ id: parents.id }).from(parents).where(and(eq(parents.userId, parsed.data.userId), eq(parents.tenantId, tenantId))))[0].id);
-  res.status(201).json(parent);
+
+  // Invite (find-or-create user, upsert tenant membership, send email)
+  const { userId } = await inviteUser({
+    email,
+    fullName: fullName ?? null,
+    role: "parent",
+    tenantId,
+    inviterUserId: inviterId,
+  });
+
+  // Create parent record
+  const [inserted] = await db
+    .insert(parents)
+    .values({ userId, tenantId, phone: phone ?? null, address: address ?? null })
+    .returning({ id: parents.id });
+
+  const parent = await parentWithUser(tenantId, inserted.id);
+  res.status(201).json({
+    ...parent,
+    invitationSent: true,
+    message: `Invitation sent to ${email}. They will be able to set their password and log in.`,
+  });
 });
 
 router.get("/parents/:parentId", async (req, res): Promise<void> => {

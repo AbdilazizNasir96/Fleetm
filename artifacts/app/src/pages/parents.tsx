@@ -7,7 +7,6 @@ import {
   useListParentStudents,
   useLinkStudentToParent,
   useListStudents,
-  useListUsers,
   getListParentsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,19 +31,21 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Users, Phone, MapPin, Mail, Link2, GraduationCap,
-  Pencil, Trash2,
+  Pencil, Trash2, CheckCircle2,
 } from "lucide-react";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
 const createSchema = z.object({
-  userId: z.string().uuid("Select a user"),
+  email: z.string().email("Enter a valid email address"),
+  fullName: z.string().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
 });
@@ -137,6 +138,7 @@ function StudentLinker({ parentId, onClose }: { parentId: string; onClose: () =>
 
 export default function ParentsPage() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null);
   const [editParent, setEditParent] = useState<{ id: string; phone?: string | null; address?: string | null } | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [linkParentId, setLinkParentId] = useState<string | null>(null);
@@ -145,19 +147,15 @@ export default function ParentsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: parentList, isLoading } = useListParents();
-  const { data: userList } = useListUsers();
   const createParent = useCreateParent();
   const updateParent = useUpdateParent();
   const deleteParent = useDeleteParent();
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListParentsQueryKey() });
 
-  // Existing parent userIds to filter user picker
-  const existingUserIds = new Set((parentList ?? []).map(p => p.userId));
-
   const createForm = useForm<CreateFormData>({
     resolver: zodResolver(createSchema),
-    defaultValues: { userId: "", phone: "", address: "" },
+    defaultValues: { email: "", fullName: "", phone: "", address: "" },
   });
 
   const editForm = useForm<EditFormData>({
@@ -172,17 +170,24 @@ export default function ParentsPage() {
 
   const onCreateSubmit = (data: CreateFormData) => {
     createParent.mutate(
-      { data: { userId: data.userId, phone: data.phone || undefined, address: data.address || undefined } },
+      {
+        data: {
+          email: data.email,
+          fullName: data.fullName || undefined,
+          phone: data.phone || undefined,
+          address: data.address || undefined,
+        },
+      },
       {
         onSuccess: () => {
           invalidate();
           setCreateOpen(false);
+          setInvitedEmail(data.email);
           createForm.reset();
-          toast({ title: "Parent added" });
         },
         onError: (err: unknown) => {
           const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-          toast({ title: msg ?? "Failed to create parent", variant: "destructive" });
+          toast({ title: msg ?? "Failed to invite parent", variant: "destructive" });
         },
       }
     );
@@ -193,10 +198,7 @@ export default function ParentsPage() {
     updateParent.mutate(
       {
         parentId: editParent.id,
-        data: {
-          phone: data.phone || null,
-          address: data.address || null,
-        },
+        data: { phone: data.phone || null, address: data.address || null },
       },
       {
         onSuccess: () => { invalidate(); setEditParent(null); toast({ title: "Parent updated" }); },
@@ -227,9 +229,6 @@ export default function ParentsPage() {
     );
   });
 
-  // Users available to become parents (exclude already-linked users)
-  const availableUsers = (userList ?? []).filter(u => !existingUserIds.has(u.id));
-
   return (
     <Layout>
       <AppSidebar />
@@ -238,13 +237,23 @@ export default function ParentsPage() {
           <div>
             <h1 className="text-2xl font-bold">Parents</h1>
             <p className="text-muted-foreground text-sm">
-              Manage parent records and link them to students
+              Invite parents by email — they'll receive a link to set their password
             </p>
           </div>
-          <Button onClick={() => setCreateOpen(true)} data-testid="add-parent-button">
-            <Plus className="w-4 h-4 mr-2" /> Add parent
+          <Button onClick={() => { setInvitedEmail(null); setCreateOpen(true); }} data-testid="add-parent-button">
+            <Plus className="w-4 h-4 mr-2" /> Invite parent
           </Button>
         </div>
+
+        {invitedEmail && (
+          <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription>
+              Invitation sent to <strong>{invitedEmail}</strong>. They'll receive an email to set their
+              password and log in.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="mb-4">
           <Input
@@ -269,11 +278,11 @@ export default function ParentsPage() {
               <p className="text-sm">
                 {search
                   ? "No parents match your search."
-                  : "No parents yet. Add a parent by linking a user account."}
+                  : "No parents yet. Invite a parent to get started."}
               </p>
               {!search && (
                 <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
-                  Add first parent
+                  Invite first parent
                 </Button>
               )}
             </CardContent>
@@ -290,7 +299,7 @@ export default function ParentsPage() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">{p.fullName ?? "—"}</p>
+                    <p className="font-semibold text-sm">{p.fullName ?? <span className="text-muted-foreground italic">Name not set</span>}</p>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                       {p.email && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -344,43 +353,36 @@ export default function ParentsPage() {
         )}
       </div>
 
-      {/* ── Create parent dialog ── */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      {/* ── Invite parent dialog ── */}
+      <Dialog open={createOpen} onOpenChange={open => { setCreateOpen(open); if (!open) createForm.reset(); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add parent</DialogTitle>
+            <DialogTitle>Invite parent</DialogTitle>
           </DialogHeader>
           <Form {...createForm}>
             <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
               <FormField
                 control={createForm.control}
-                name="userId"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>User account *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-user-for-parent">
-                          <SelectValue placeholder="Select a user…" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableUsers.length === 0 ? (
-                          <SelectItem value="__none__" disabled>
-                            All users already have parent records
-                          </SelectItem>
-                        ) : (
-                          availableUsers.map(u => (
-                            <SelectItem key={u.id} value={u.id}>
-                              {u.fullName ?? u.email}
-                              {u.fullName && (
-                                <span className="text-muted-foreground ml-1">({u.email})</span>
-                              )}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Email *</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" placeholder="parent@example.com" data-testid="input-parent-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Jane Smith" data-testid="input-parent-fullname" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -411,12 +413,13 @@ export default function ParentsPage() {
                   </FormItem>
                 )}
               />
+              <p className="text-xs text-muted-foreground">
+                An invitation email will be sent so they can set their password and activate their account.
+              </p>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-                  Cancel
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
                 <Button type="submit" disabled={createParent.isPending} data-testid="submit-parent">
-                  {createParent.isPending ? "Adding…" : "Add parent"}
+                  {createParent.isPending ? "Sending…" : "Send invitation"}
                 </Button>
               </DialogFooter>
             </form>
@@ -459,9 +462,7 @@ export default function ParentsPage() {
                 )}
               />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditParent(null)}>
-                  Cancel
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditParent(null)}>Cancel</Button>
                 <Button type="submit" disabled={updateParent.isPending} data-testid="save-parent">
                   {updateParent.isPending ? "Saving…" : "Save changes"}
                 </Button>
@@ -489,7 +490,7 @@ export default function ParentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove parent?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the parent record and unlinks them from all students. The user account
+              This removes the parent record and unlinks them from all students. Their user account
               is not deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -370,7 +370,8 @@ export const ListDriversResponse = zod.array(ListDriversResponseItem);
  * @summary Create a driver
  */
 export const CreateDriverBody = zod.object({
-  userId: zod.string().optional(),
+  email: zod.string().email(),
+  fullName: zod.string().optional(),
   licenseNumber: zod.string(),
   phone: zod.string().optional(),
   hireDate: zod.string().optional(),
@@ -725,7 +726,8 @@ export const ListParentsResponse = zod.array(ListParentsResponseItem);
  * @summary Create a parent record
  */
 export const CreateParentBody = zod.object({
-  userId: zod.string(),
+  email: zod.string().email(),
+  fullName: zod.string().optional(),
   phone: zod.string().optional(),
   address: zod.string().optional(),
 });

@@ -186,7 +186,8 @@ export interface Driver {
 }
 
 export interface CreateDriverBody {
-  userId?: string;
+  email: string;
+  fullName?: string;
   licenseNumber: string;
   phone?: string;
   hireDate?: string;
@@ -405,7 +406,8 @@ export interface UpdateStudentBody {
 }
 
 export interface CreateParentBody {
-  userId: string;
+  email: string;
+  fullName?: string;
   phone?: string;
   address?: string;
 }

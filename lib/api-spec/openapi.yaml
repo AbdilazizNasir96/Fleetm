@@ -1973,7 +1973,10 @@ components:
     CreateDriverBody:
       type: object
       properties:
-        userId:
+        email:
+          type: string
+          format: email
+        fullName:
           type: string
         licenseNumber:
           type: string
@@ -1984,6 +1987,7 @@ components:
         assignedVehicleId:
           type: string
       required:
+        - email
         - licenseNumber
 
     UpdateDriverBody:
@@ -2340,14 +2344,17 @@ components:
     CreateParentBody:
       type: object
       properties:
-        userId:
+        email:
+          type: string
+          format: email
+        fullName:
           type: string
         phone:
           type: string
         address:
           type: string
       required:
-        - userId
+        - email
 
     UpdateParentBody:
       type: object
