@@ -291,6 +291,10 @@ export interface School {
   contactPhone?: string | null;
   /** @nullable */
   contactEmail?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+  /** @nullable */
+  updatedAt?: string | null;
 }
 
 export interface CreateSchoolBody {
@@ -333,8 +337,7 @@ export interface Student {
 export interface Parent {
   id: string;
   tenantId: string;
-  /** @nullable */
-  userId?: string | null;
+  userId: string;
   /** @nullable */
   phone?: string | null;
   /** @nullable */
@@ -343,6 +346,10 @@ export interface Parent {
   fullName?: string | null;
   /** @nullable */
   email?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+  /** @nullable */
+  updatedAt?: string | null;
 }
 
 export interface StudentDetail {
@@ -398,15 +405,16 @@ export interface UpdateStudentBody {
 }
 
 export interface CreateParentBody {
-  userId?: string;
+  userId: string;
   phone?: string;
   address?: string;
 }
 
 export interface UpdateParentBody {
-  phone?: string;
-  address?: string;
-  userId?: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  address?: string | null;
 }
 
 export interface LinkStudentBody {

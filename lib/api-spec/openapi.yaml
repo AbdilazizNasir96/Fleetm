@@ -879,6 +879,69 @@ paths:
               schema:
                 $ref: "#/components/schemas/Parent"
 
+  /parents/{parentId}:
+    get:
+      operationId: getParent
+      tags: [parents]
+      summary: Get a parent by ID
+      parameters:
+        - in: path
+          name: parentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Parent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateParent
+      tags: [parents]
+      summary: Update parent phone/address
+      parameters:
+        - in: path
+          name: parentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateParentBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parent"
+
+    delete:
+      operationId: deleteParent
+      tags: [parents]
+      summary: Delete a parent record
+      parameters:
+        - in: path
+          name: parentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
   /parents/{parentId}/students:
     get:
       operationId: listParentStudents
@@ -2089,6 +2152,10 @@ components:
           type: ["string", "null"]
         contactEmail:
           type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+        updatedAt:
+          type: ["string", "null"]
       required:
         - id
         - tenantId
@@ -2252,7 +2319,7 @@ components:
         tenantId:
           type: string
         userId:
-          type: ["string", "null"]
+          type: string
         phone:
           type: ["string", "null"]
         address:
@@ -2261,9 +2328,14 @@ components:
           type: ["string", "null"]
         email:
           type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+        updatedAt:
+          type: ["string", "null"]
       required:
         - id
         - tenantId
+        - userId
 
     CreateParentBody:
       type: object
@@ -2274,16 +2346,16 @@ components:
           type: string
         address:
           type: string
+      required:
+        - userId
 
     UpdateParentBody:
       type: object
       properties:
         phone:
-          type: string
+          type: ["string", "null"]
         address:
-          type: string
-        userId:
-          type: string
+          type: ["string", "null"]
 
     LinkStudentBody:
       type: object

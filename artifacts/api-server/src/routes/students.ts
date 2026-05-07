@@ -11,16 +11,20 @@ import {
   DeleteStudentParams,
   ListStudentsQueryParams,
   CreateParentBody,
+  UpdateParentBody,
   ListParentStudentsParams,
   LinkStudentToParentParams,
   LinkStudentToParentBody,
+  GetParentParams,
+  DeleteParentParams,
 } from "@workspace/api-zod";
 
 const router = Router();
 
 router.use(requireAuth);
 
-// Students
+// ─── Students ─────────────────────────────────────────────────────────────
+
 router.get("/students", async (req, res): Promise<void> => {
   const tenantId = req.user!.tenantId;
   const query = ListStudentsQueryParams.safeParse(req.query);
@@ -92,12 +96,14 @@ router.get("/students/:studentId", async (req, res): Promise<void> => {
       userId: parents.userId,
       phone: parents.phone,
       address: parents.address,
+      createdAt: parents.createdAt,
+      updatedAt: parents.updatedAt,
       fullName: users.fullName,
       email: users.email,
     })
     .from(studentParents)
     .innerJoin(parents, eq(studentParents.parentId, parents.id))
-    .leftJoin(users, eq(parents.userId, users.id))
+    .innerJoin(users, eq(parents.userId, users.id))
     .where(eq(studentParents.studentId, student.id));
 
   res.json({ ...student, parents: studentParentRows });
@@ -143,7 +149,27 @@ router.delete("/students/:studentId", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-// Parents
+// ─── Parents ──────────────────────────────────────────────────────────────
+
+async function parentWithUser(tenantId: string, parentId: string) {
+  const [row] = await db
+    .select({
+      id: parents.id,
+      tenantId: parents.tenantId,
+      userId: parents.userId,
+      phone: parents.phone,
+      address: parents.address,
+      createdAt: parents.createdAt,
+      updatedAt: parents.updatedAt,
+      fullName: users.fullName,
+      email: users.email,
+    })
+    .from(parents)
+    .innerJoin(users, eq(parents.userId, users.id))
+    .where(and(eq(parents.id, parentId), eq(parents.tenantId, tenantId)));
+  return row ?? null;
+}
+
 router.get("/parents", async (req, res): Promise<void> => {
   const tenantId = req.user!.tenantId;
   const rows = await db
@@ -153,11 +179,13 @@ router.get("/parents", async (req, res): Promise<void> => {
       userId: parents.userId,
       phone: parents.phone,
       address: parents.address,
+      createdAt: parents.createdAt,
+      updatedAt: parents.updatedAt,
       fullName: users.fullName,
       email: users.email,
     })
     .from(parents)
-    .leftJoin(users, eq(parents.userId, users.id))
+    .innerJoin(users, eq(parents.userId, users.id))
     .where(eq(parents.tenantId, tenantId));
   res.json(rows);
 });
@@ -169,8 +197,82 @@ router.post("/parents", async (req, res): Promise<void> => {
     return;
   }
   const tenantId = req.user!.tenantId;
-  const [parent] = await db.insert(parents).values({ ...parsed.data, tenantId }).returning();
+  // Verify the user exists
+  const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.data.userId));
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  // Prevent duplicate parent record for same user in same tenant
+  const [existing] = await db
+    .select({ id: parents.id })
+    .from(parents)
+    .where(and(eq(parents.userId, parsed.data.userId), eq(parents.tenantId, tenantId)));
+  if (existing) {
+    res.status(409).json({ error: "A parent record already exists for this user in this tenant" });
+    return;
+  }
+  await db.insert(parents).values({ ...parsed.data, tenantId });
+  const parent = await parentWithUser(tenantId, (await db.select({ id: parents.id }).from(parents).where(and(eq(parents.userId, parsed.data.userId), eq(parents.tenantId, tenantId))))[0].id);
   res.status(201).json(parent);
+});
+
+router.get("/parents/:parentId", async (req, res): Promise<void> => {
+  const params = GetParentParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const tenantId = req.user!.tenantId;
+  const parent = await parentWithUser(tenantId, params.data.parentId);
+  if (!parent) {
+    res.status(404).json({ error: "Parent not found" });
+    return;
+  }
+  res.json(parent);
+});
+
+router.patch("/parents/:parentId", async (req, res): Promise<void> => {
+  const params = GetParentParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const parsed = UpdateParentBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const tenantId = req.user!.tenantId;
+  const [updated] = await db
+    .update(parents)
+    .set({ ...parsed.data, updatedAt: new Date() })
+    .where(and(eq(parents.id, params.data.parentId), eq(parents.tenantId, tenantId)))
+    .returning({ id: parents.id });
+  if (!updated) {
+    res.status(404).json({ error: "Parent not found" });
+    return;
+  }
+  const parent = await parentWithUser(tenantId, updated.id);
+  res.json(parent);
+});
+
+router.delete("/parents/:parentId", async (req, res): Promise<void> => {
+  const params = DeleteParentParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const tenantId = req.user!.tenantId;
+  const [deleted] = await db
+    .delete(parents)
+    .where(and(eq(parents.id, params.data.parentId), eq(parents.tenantId, tenantId)))
+    .returning({ id: parents.id });
+  if (!deleted) {
+    res.status(404).json({ error: "Parent not found" });
+    return;
+  }
+  res.sendStatus(204);
 });
 
 router.get("/parents/:parentId/students", async (req, res): Promise<void> => {

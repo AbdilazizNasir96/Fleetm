@@ -71,6 +71,7 @@ import type {
   UpdateDriverBody,
   UpdateIncidentBody,
   UpdateMaintenanceLogBody,
+  UpdateParentBody,
   UpdatePassengerBody,
   UpdateRouteBody,
   UpdateSchoolBody,
@@ -3564,6 +3565,262 @@ export const useCreateParent = <
   TContext
 > => {
   return useMutation(getCreateParentMutationOptions(options));
+};
+
+/**
+ * @summary Get a parent by ID
+ */
+export const getGetParentUrl = (parentId: string) => {
+  return `/api/parents/${parentId}`;
+};
+
+export const getParent = async (
+  parentId: string,
+  options?: RequestInit,
+): Promise<Parent> => {
+  return customFetch<Parent>(getGetParentUrl(parentId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetParentQueryKey = (parentId: string) => {
+  return [`/api/parents/${parentId}`] as const;
+};
+
+export const getGetParentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getParent>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  parentId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getParent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetParentQueryKey(parentId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getParent>>> = ({
+    signal,
+  }) => getParent(parentId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!parentId,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getParent>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetParentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getParent>>
+>;
+export type GetParentQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a parent by ID
+ */
+
+export function useGetParent<
+  TData = Awaited<ReturnType<typeof getParent>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  parentId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getParent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetParentQueryOptions(parentId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update parent phone/address
+ */
+export const getUpdateParentUrl = (parentId: string) => {
+  return `/api/parents/${parentId}`;
+};
+
+export const updateParent = async (
+  parentId: string,
+  updateParentBody: UpdateParentBody,
+  options?: RequestInit,
+): Promise<Parent> => {
+  return customFetch<Parent>(getUpdateParentUrl(parentId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateParentBody),
+  });
+};
+
+export const getUpdateParentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateParent>>,
+    TError,
+    { parentId: string; data: BodyType<UpdateParentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateParent>>,
+  TError,
+  { parentId: string; data: BodyType<UpdateParentBody> },
+  TContext
+> => {
+  const mutationKey = ["updateParent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateParent>>,
+    { parentId: string; data: BodyType<UpdateParentBody> }
+  > = (props) => {
+    const { parentId, data } = props ?? {};
+
+    return updateParent(parentId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateParentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateParent>>
+>;
+export type UpdateParentMutationBody = BodyType<UpdateParentBody>;
+export type UpdateParentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update parent phone/address
+ */
+export const useUpdateParent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateParent>>,
+    TError,
+    { parentId: string; data: BodyType<UpdateParentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateParent>>,
+  TError,
+  { parentId: string; data: BodyType<UpdateParentBody> },
+  TContext
+> => {
+  return useMutation(getUpdateParentMutationOptions(options));
+};
+
+/**
+ * @summary Delete a parent record
+ */
+export const getDeleteParentUrl = (parentId: string) => {
+  return `/api/parents/${parentId}`;
+};
+
+export const deleteParent = async (
+  parentId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteParentUrl(parentId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteParentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteParent>>,
+    TError,
+    { parentId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteParent>>,
+  TError,
+  { parentId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteParent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteParent>>,
+    { parentId: string }
+  > = (props) => {
+    const { parentId } = props ?? {};
+
+    return deleteParent(parentId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteParentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteParent>>
+>;
+
+export type DeleteParentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a parent record
+ */
+export const useDeleteParent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteParent>>,
+    TError,
+    { parentId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteParent>>,
+  TError,
+  { parentId: string },
+  TContext
+> => {
+  return useMutation(getDeleteParentMutationOptions(options));
 };
 
 /**

@@ -652,11 +652,13 @@ export const GetStudentResponse = zod.object({
     zod.object({
       id: zod.string(),
       tenantId: zod.string(),
-      userId: zod.string().nullish(),
+      userId: zod.string(),
       phone: zod.string().nullish(),
       address: zod.string().nullish(),
       fullName: zod.string().nullish(),
       email: zod.string().nullish(),
+      createdAt: zod.string().nullish(),
+      updatedAt: zod.string().nullish(),
     }),
   ),
 });
@@ -709,11 +711,13 @@ export const DeleteStudentParams = zod.object({
 export const ListParentsResponseItem = zod.object({
   id: zod.string(),
   tenantId: zod.string(),
-  userId: zod.string().nullish(),
+  userId: zod.string(),
   phone: zod.string().nullish(),
   address: zod.string().nullish(),
   fullName: zod.string().nullish(),
   email: zod.string().nullish(),
+  createdAt: zod.string().nullish(),
+  updatedAt: zod.string().nullish(),
 });
 export const ListParentsResponse = zod.array(ListParentsResponseItem);
 
@@ -721,9 +725,59 @@ export const ListParentsResponse = zod.array(ListParentsResponseItem);
  * @summary Create a parent record
  */
 export const CreateParentBody = zod.object({
-  userId: zod.string().optional(),
+  userId: zod.string(),
   phone: zod.string().optional(),
   address: zod.string().optional(),
+});
+
+/**
+ * @summary Get a parent by ID
+ */
+export const GetParentParams = zod.object({
+  parentId: zod.coerce.string(),
+});
+
+export const GetParentResponse = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  userId: zod.string(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  fullName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  createdAt: zod.string().nullish(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Update parent phone/address
+ */
+export const UpdateParentParams = zod.object({
+  parentId: zod.coerce.string(),
+});
+
+export const UpdateParentBody = zod.object({
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+});
+
+export const UpdateParentResponse = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  userId: zod.string(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  fullName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  createdAt: zod.string().nullish(),
+  updatedAt: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a parent record
+ */
+export const DeleteParentParams = zod.object({
+  parentId: zod.coerce.string(),
 });
 
 /**
@@ -772,6 +826,8 @@ export const ListSchoolsResponseItem = zod.object({
   address: zod.string().nullish(),
   contactPhone: zod.string().nullish(),
   contactEmail: zod.string().nullish(),
+  createdAt: zod.string().nullish(),
+  updatedAt: zod.string().nullish(),
 });
 export const ListSchoolsResponse = zod.array(ListSchoolsResponseItem);
 
@@ -806,6 +862,8 @@ export const UpdateSchoolResponse = zod.object({
   address: zod.string().nullish(),
   contactPhone: zod.string().nullish(),
   contactEmail: zod.string().nullish(),
+  createdAt: zod.string().nullish(),
+  updatedAt: zod.string().nullish(),
 });
 
 /**
