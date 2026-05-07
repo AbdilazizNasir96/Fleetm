@@ -91,7 +91,7 @@ export function AppSidebar() {
           <Bus className="w-4 h-4 text-sidebar-primary-foreground" />
         </div>
         <div className="min-w-0">
-          <p className="text-sidebar-foreground font-bold text-sm truncate">ProjectTnW</p>
+          <p className="text-sidebar-foreground font-bold text-sm truncate">Digivant Solutions</p>
           <p className="text-sidebar-foreground/50 text-xs truncate">Transport Platform</p>
         </div>
       </div>

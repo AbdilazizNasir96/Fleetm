@@ -57,7 +57,7 @@ export default function LoginPage() {
           <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
             <Bus className="w-5 h-5 text-sidebar-primary-foreground" />
           </div>
-          <span className="text-sidebar-foreground text-xl font-bold">ProjectTnW</span>
+          <span className="text-sidebar-foreground text-xl font-bold">Digivant Solutions</span>
         </div>
         <div>
           <h1 className="text-sidebar-foreground text-4xl font-bold leading-tight mb-4">
@@ -86,7 +86,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <Bus className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold">ProjectTnW</span>
+            <span className="text-xl font-bold">Digivant Solutions</span>
           </div>
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-foreground">Sign in</h2>

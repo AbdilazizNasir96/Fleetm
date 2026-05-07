@@ -1,7 +1,7 @@
 import { logger } from "./logger";
 
-const FROM_EMAIL = process.env["SENDGRID_FROM_EMAIL"] || "noreply@projecttnw.com";
-const FROM_NAME = "ProjectTnW";
+const FROM_EMAIL = process.env["SENDGRID_FROM_EMAIL"] || "noreply@digivantsolutions.com";
+const FROM_NAME = "Digivant Solutions";
 const APP_URL =
   process.env["APP_URL"] ||
   (process.env["REPLIT_DOMAINS"]
@@ -55,8 +55,8 @@ function layout(title: string, body: string): string {
 
         <!-- Header -->
         <tr>
-          <td style="background:#0f172a;border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
-            <span style="font-size:22px;font-weight:700;color:#f59e0b;letter-spacing:-0.5px;">🚌 ProjectTnW</span>
+          <td style="background:#4d8cff;border-radius:12px 12px 0 0;padding:28px 40px;text-align:center;">
+            <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">🚌 Digivant Solutions</span>
           </td>
         </tr>
 
@@ -64,9 +64,9 @@ function layout(title: string, body: string): string {
         <tr>
           <td style="background:#ffffff;padding:40px;border-radius:0 0 12px 12px;">
             ${body}
-            <hr style="border:none;border-top:1px solid #e4e4e7;margin:32px 0;" />
+            <hr style="border:none;border-top:1px solid #b8d4ff;margin:32px 0;" />
             <p style="font-size:12px;color:#a1a1aa;margin:0;text-align:center;">
-              ProjectTnW · School Transport Command Center<br />
+              Digivant Solutions · School Transport Command Center<br />
               You received this email because an action was taken on your account.
             </p>
           </td>
@@ -80,11 +80,11 @@ function layout(title: string, body: string): string {
 }
 
 function button(text: string, href: string): string {
-  return `<a href="${href}" style="display:inline-block;background:#0f172a;color:#f59e0b;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;margin:24px 0;">${text}</a>`;
+  return `<a href="${href}" style="display:inline-block;background:#4d8cff;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;margin:24px 0;">${text}</a>`;
 }
 
 function h1(text: string): string {
-  return `<h1 style="font-size:24px;font-weight:700;color:#0f172a;margin:0 0 8px;">${text}</h1>`;
+  return `<h1 style="font-size:24px;font-weight:700;color:#2b5bb3;margin:0 0 8px;">${text}</h1>`;
 }
 
 function p(text: string): string {
@@ -108,10 +108,10 @@ export function buildInvitationEmail(opts: {
   const roleLabel = opts.role.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
   const html = layout(
-    `You're invited to join ${opts.tenantName} on ProjectTnW`,
+    `You're invited to join ${opts.tenantName} on Digivant Solutions`,
     `
     ${h1(`You've been invited to join ${opts.tenantName}`)}
-    ${p(`<strong>${opts.inviterName}</strong> has invited you to join <strong>${opts.tenantName}</strong> on ProjectTnW as a <strong>${roleLabel}</strong>.`)}
+    ${p(`<strong>${opts.inviterName}</strong> has invited you to join <strong>${opts.tenantName}</strong> on Digivant Solutions as a <strong>${roleLabel}</strong>.`)}
     ${p("Click the button below to accept your invitation and set up your account. This link expires in 7 days.")}
     <div style="text-align:center;">
       ${button("Accept Invitation", acceptUrl)}
@@ -122,7 +122,7 @@ export function buildInvitationEmail(opts: {
   );
 
 
-  return { to: opts.inviteeEmail, subject: `You're invited to join ${opts.tenantName} on ProjectTnW`, html };
+  return { to: opts.inviteeEmail, subject: `You're invited to join ${opts.tenantName} on Digivant Solutions`, html };
 }
 
 export function buildWelcomeEmail(opts: {
@@ -134,10 +134,10 @@ export function buildWelcomeEmail(opts: {
   const firstName = opts.fullName?.split(" ")[0] ?? "there";
 
   const html = layout(
-    `Welcome to ProjectTnW`,
+    `Welcome to Digivant Solutions`,
     `
     ${h1(`Welcome aboard, ${firstName}! 🎉`)}
-    ${p(`Your organisation <strong>${opts.tenantName}</strong> is now set up on ProjectTnW. You're on a <strong>14-day free trial</strong> with full access to every feature.`)}
+    ${p(`Your organisation <strong>${opts.tenantName}</strong> is now set up on Digivant Solutions. You're on a <strong>14-day free trial</strong> with full access to every feature.`)}
     <div style="background:#f4f4f5;border-radius:8px;padding:20px;margin:20px 0;">
       <p style="font-size:14px;color:#3f3f46;margin:0 0 10px;font-weight:600;">Get started in minutes:</p>
       <ul style="font-size:14px;color:#3f3f46;margin:0;padding-left:20px;line-height:2;">
@@ -154,7 +154,7 @@ export function buildWelcomeEmail(opts: {
     `
   );
 
-  return { to: opts.email, subject: `Welcome to ProjectTnW — ${opts.tenantName} is ready`, html };
+  return { to: opts.email, subject: `Welcome to Digivant Solutions — ${opts.tenantName} is ready`, html };
 }
 
 export function buildIncidentAlertEmail(opts: {

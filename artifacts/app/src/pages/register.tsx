@@ -62,7 +62,7 @@ export default function RegisterPage() {
           <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
             <Bus className="w-5 h-5 text-sidebar-primary-foreground" />
           </div>
-          <span className="text-sidebar-foreground text-xl font-bold">ProjectTnW</span>
+          <span className="text-sidebar-foreground text-xl font-bold">Digivant Solutions</span>
         </div>
         <div>
           <h1 className="text-sidebar-foreground text-4xl font-bold leading-tight mb-4">

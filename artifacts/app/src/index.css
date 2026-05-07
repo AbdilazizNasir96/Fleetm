@@ -66,6 +66,15 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Brand palette (hex reference)
+   --brand-bg:         #e6f0ff  (220 100% 95%)
+   --brand-primary:    #4d8cff  (220 100% 64%)
+   --brand-hover:      #2b5bb3  (220 61%  44%)
+   --brand-sidebar:    #d9e6ff  (220 100% 92%)
+   --brand-border:     #b8d4ff  (217 100% 86%)
+   --brand-header-bg:  #f0f5ff  (220 100% 97%)
+*/
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);
@@ -74,38 +83,38 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 210 40% 98%; /* Slate 50 */
-  --foreground: 222 47% 11%; /* Navy 900 */
-  --border: 214 32% 91%; /* Slate 200 */
+  --background: 220 100% 95%; /* #e6f0ff */
+  --foreground: 222 47% 11%;
+  --border: 217 100% 86%; /* #b8d4ff */
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
-  --sidebar: 222 47% 11%; /* Navy 900 */
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 215 28% 17%;
-  --sidebar-primary: 38 92% 50%; /* Amber 500 */
-  --sidebar-primary-foreground: 222 47% 11%;
-  --sidebar-accent: 215 28% 17%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 214 32% 91%;
+  --card-border: 217 100% 86%;
+  --sidebar: 220 100% 92%; /* #d9e6ff */
+  --sidebar-foreground: 222 47% 18%;
+  --sidebar-border: 217 100% 86%;
+  --sidebar-primary: 220 100% 64%; /* #4d8cff */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 61% 44%; /* #2b5bb3 */
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 217 100% 86%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
-  --primary: 222 47% 11%; /* Navy 900 */
-  --primary-foreground: 210 40% 98%;
-  --secondary: 214 32% 91%; /* Slate 200 */
+  --popover-border: 217 100% 86%;
+  --primary: 220 100% 64%; /* #4d8cff */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 100% 97%; /* #f0f5ff */
   --secondary-foreground: 222 47% 11%;
-  --muted: 214 32% 91%; /* Slate 200 */
-  --muted-foreground: 215 16% 47%; /* Slate 500 */
-  --accent: 38 92% 50%; /* Amber 500 */
-  --accent-foreground: 222 47% 11%;
+  --muted: 220 100% 97%; /* #f0f5ff */
+  --muted-foreground: 215 16% 47%;
+  --accent: 220 61% 44%; /* #2b5bb3 */
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --input: 214 32% 91%;
-  --ring: 222 47% 11%;
-  
-  --chart-1: 222 47% 11%;
-  --chart-2: 38 92% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 217 100% 86%;
+  --ring: 220 100% 64%;
+
+  --chart-1: 220 100% 64%;
+  --chart-2: 220 61% 44%;
   --chart-3: 160 60% 45%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
