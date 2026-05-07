@@ -203,7 +203,7 @@ router.post("/invitations", async (req, res): Promise<void> => {
     .from(tenants)
     .where(eq(tenants.id, tenantId));
 
-  const emailOpts = buildInvitationEmail({
+  const inviteEmail = buildInvitationEmail({
     inviteeEmail: parsed.data.email,
     inviterName: inviter?.fullName ?? "Your administrator",
     tenantName: tenant?.name ?? "your organization",
@@ -211,7 +211,7 @@ router.post("/invitations", async (req, res): Promise<void> => {
     invitationToken: token,
   });
 
-  sendEmail(emailOpts).catch(err =>
+  sendEmail(inviteEmail.to, inviteEmail.subject, inviteEmail.html).catch(err =>
     logger.error({ err, email: parsed.data.email }, "Failed to send invitation email")
   );
 

@@ -117,8 +117,8 @@ router.post("/incidents", async (req, res): Promise<void> => {
         .where(and(eq(userTenants.tenantId, tenantId), eq(userTenants.role, "admin")));
 
       await Promise.allSettled(
-        adminRows.map(admin =>
-          sendEmail(buildIncidentAlertEmail({
+        adminRows.map(admin => {
+          const alert = buildIncidentAlertEmail({
             adminEmail: admin.email,
             adminName: admin.fullName ?? null,
             reporterName: reporter?.fullName ?? null,
@@ -127,8 +127,9 @@ router.post("/incidents", async (req, res): Promise<void> => {
             vehiclePlate,
             occurredAt: incident.occurredAt?.toISOString() ?? new Date().toISOString(),
             incidentId: incident.id,
-          }))
-        )
+          });
+          return sendEmail(alert.to, alert.subject, alert.html);
+        })
       );
     } catch (err) {
       logger.error({ err }, "Failed to send incident alert emails");

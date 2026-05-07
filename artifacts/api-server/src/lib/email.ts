@@ -12,30 +12,25 @@ export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
-  text?: string;
 }
 
-export async function sendEmail(opts: SendEmailOptions): Promise<void> {
-  const isDev = process.env["NODE_ENV"] !== "production";
-  const apiKey = process.env["SENDGRID_API_KEY"];
-
-  if (isDev && !apiKey) {
+export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+  if (process.env["NODE_ENV"] === "development" && !process.env["SENDGRID_API_KEY"]) {
     logger.info(
-      { to: opts.to, subject: opts.subject },
-      `[DEV EMAIL]\n${opts.text ?? opts.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}`
+      { to, subject },
+      `[DEV EMAIL] ${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}`
     );
     return;
   }
 
-  if (apiKey) {
+  if (process.env["SENDGRID_API_KEY"]) {
     const sgMail = (await import("@sendgrid/mail")).default;
-    sgMail.setApiKey(apiKey);
+    sgMail.setApiKey(process.env["SENDGRID_API_KEY"]);
     await sgMail.send({
-      to: opts.to,
+      to,
       from: { email: FROM_EMAIL, name: FROM_NAME },
-      subject: opts.subject,
-      html: opts.html,
-      text: opts.text,
+      subject,
+      html,
     });
     return;
   }
@@ -126,9 +121,8 @@ export function buildInvitationEmail(opts: {
     `
   );
 
-  const text = `You've been invited to join ${opts.tenantName} on ProjectTnW as a ${roleLabel}.\n\nAccept your invitation: ${acceptUrl}\n\nThis link expires in 7 days.`;
 
-  return { to: opts.inviteeEmail, subject: `You're invited to join ${opts.tenantName} on ProjectTnW`, html, text };
+  return { to: opts.inviteeEmail, subject: `You're invited to join ${opts.tenantName} on ProjectTnW`, html };
 }
 
 export function buildWelcomeEmail(opts: {
@@ -160,9 +154,7 @@ export function buildWelcomeEmail(opts: {
     `
   );
 
-  const text = `Welcome to ProjectTnW, ${firstName}!\n\nYour organisation ${opts.tenantName} is set up. Go to your dashboard: ${dashboardUrl}`;
-
-  return { to: opts.email, subject: `Welcome to ProjectTnW — ${opts.tenantName} is ready`, html, text };
+  return { to: opts.email, subject: `Welcome to ProjectTnW — ${opts.tenantName} is ready`, html };
 }
 
 export function buildIncidentAlertEmail(opts: {
@@ -200,12 +192,9 @@ export function buildIncidentAlertEmail(opts: {
     `
   );
 
-  const text = `New ${typeLabel} incident reported by ${opts.reporterName ?? "Unknown"}.\n\nDescription: ${opts.description}\nVehicle: ${opts.vehiclePlate ?? "N/A"}\n\nView: ${incidentUrl}`;
-
   return {
     to: opts.adminEmail,
     subject: `[Alert] ${typeLabel} incident reported on your fleet`,
     html,
-    text,
   };
 }

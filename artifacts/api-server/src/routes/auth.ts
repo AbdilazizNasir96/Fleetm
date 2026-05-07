@@ -69,11 +69,12 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     isSuperAdmin: false,
   });
 
-  sendEmail(buildWelcomeEmail({
+  const welcome = buildWelcomeEmail({
     email: newUser.email,
     fullName: newUser.fullName,
     tenantName: newTenant.name,
-  })).catch(err =>
+  });
+  sendEmail(welcome.to, welcome.subject, welcome.html).catch(err =>
     logger.error({ err, email: newUser.email }, "Failed to send welcome email")
   );
 
