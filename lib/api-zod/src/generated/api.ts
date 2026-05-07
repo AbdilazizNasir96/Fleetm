@@ -601,6 +601,7 @@ export const ListStudentsResponseItem = zod.object({
   tenantId: zod.string(),
   firstName: zod.string(),
   lastName: zod.string(),
+  schoolId: zod.string().nullish(),
   schoolName: zod.string().nullish(),
   grade: zod.number().nullish(),
   homeStopId: zod.string().nullish(),
@@ -617,6 +618,7 @@ export const ListStudentsResponse = zod.array(ListStudentsResponseItem);
 export const CreateStudentBody = zod.object({
   firstName: zod.string(),
   lastName: zod.string(),
+  schoolId: zod.string().optional(),
   schoolName: zod.string().optional(),
   grade: zod.number().optional(),
   homeStopId: zod.string().optional(),
@@ -638,6 +640,7 @@ export const GetStudentResponse = zod.object({
   tenantId: zod.string(),
   firstName: zod.string(),
   lastName: zod.string(),
+  schoolId: zod.string().nullish(),
   schoolName: zod.string().nullish(),
   grade: zod.number().nullish(),
   homeStopId: zod.string().nullish(),
@@ -651,6 +654,7 @@ export const GetStudentResponse = zod.object({
       tenantId: zod.string(),
       userId: zod.string().nullish(),
       phone: zod.string().nullish(),
+      address: zod.string().nullish(),
       fullName: zod.string().nullish(),
       email: zod.string().nullish(),
     }),
@@ -667,6 +671,7 @@ export const UpdateStudentParams = zod.object({
 export const UpdateStudentBody = zod.object({
   firstName: zod.string().optional(),
   lastName: zod.string().optional(),
+  schoolId: zod.string().nullish(),
   schoolName: zod.string().optional(),
   grade: zod.number().optional(),
   homeStopId: zod.string().nullish(),
@@ -681,6 +686,7 @@ export const UpdateStudentResponse = zod.object({
   tenantId: zod.string(),
   firstName: zod.string(),
   lastName: zod.string(),
+  schoolId: zod.string().nullish(),
   schoolName: zod.string().nullish(),
   grade: zod.number().nullish(),
   homeStopId: zod.string().nullish(),
@@ -705,6 +711,7 @@ export const ListParentsResponseItem = zod.object({
   tenantId: zod.string(),
   userId: zod.string().nullish(),
   phone: zod.string().nullish(),
+  address: zod.string().nullish(),
   fullName: zod.string().nullish(),
   email: zod.string().nullish(),
 });
@@ -716,6 +723,7 @@ export const ListParentsResponse = zod.array(ListParentsResponseItem);
 export const CreateParentBody = zod.object({
   userId: zod.string().optional(),
   phone: zod.string().optional(),
+  address: zod.string().optional(),
 });
 
 /**
@@ -730,6 +738,7 @@ export const ListParentStudentsResponseItem = zod.object({
   tenantId: zod.string(),
   firstName: zod.string(),
   lastName: zod.string(),
+  schoolId: zod.string().nullish(),
   schoolName: zod.string().nullish(),
   grade: zod.number().nullish(),
   homeStopId: zod.string().nullish(),
@@ -751,6 +760,133 @@ export const LinkStudentToParentParams = zod.object({
 
 export const LinkStudentToParentBody = zod.object({
   studentId: zod.string(),
+});
+
+/**
+ * @summary List schools for the tenant
+ */
+export const ListSchoolsResponseItem = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  name: zod.string(),
+  address: zod.string().nullish(),
+  contactPhone: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+});
+export const ListSchoolsResponse = zod.array(ListSchoolsResponseItem);
+
+/**
+ * @summary Create a school
+ */
+export const CreateSchoolBody = zod.object({
+  name: zod.string(),
+  address: zod.string().optional(),
+  contactPhone: zod.string().optional(),
+  contactEmail: zod.string().optional(),
+});
+
+/**
+ * @summary Update a school
+ */
+export const UpdateSchoolParams = zod.object({
+  schoolId: zod.coerce.string(),
+});
+
+export const UpdateSchoolBody = zod.object({
+  name: zod.string().optional(),
+  address: zod.string().optional(),
+  contactPhone: zod.string().optional(),
+  contactEmail: zod.string().optional(),
+});
+
+export const UpdateSchoolResponse = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  name: zod.string(),
+  address: zod.string().nullish(),
+  contactPhone: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a school
+ */
+export const DeleteSchoolParams = zod.object({
+  schoolId: zod.coerce.string(),
+});
+
+/**
+ * @summary Get students linked to the authenticated parent
+ */
+export const PortalListMyStudentsResponseItem = zod.object({
+  id: zod.string(),
+  firstName: zod.string(),
+  lastName: zod.string(),
+  schoolName: zod.string().nullish(),
+  grade: zod.number().nullish(),
+  specialNeeds: zod.string().nullish(),
+});
+export const PortalListMyStudentsResponse = zod.array(
+  PortalListMyStudentsResponseItem,
+);
+
+/**
+ * @summary Get upcoming and recent trips for one of my students
+ */
+export const PortalListStudentTripsParams = zod.object({
+  studentId: zod.coerce.string(),
+});
+
+export const PortalListStudentTripsResponseItem = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  routeId: zod.string(),
+  vehicleId: zod.string(),
+  driverId: zod.string(),
+  scheduledStart: zod.string(),
+  scheduledEnd: zod.string().nullish(),
+  actualStart: zod.string().nullish(),
+  actualEnd: zod.string().nullish(),
+  status: zod.string().nullish(),
+  createdAt: zod.string().nullish(),
+  routeName: zod.string().nullish(),
+  driverName: zod.string().nullish(),
+  vehicleLicensePlate: zod.string().nullish(),
+  passengerCount: zod.number().nullish(),
+});
+export const PortalListStudentTripsResponse = zod.array(
+  PortalListStudentTripsResponseItem,
+);
+
+/**
+ * @summary Get incidents related to my students
+ */
+export const PortalListIncidentsResponseItem = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  tripId: zod.string().nullish(),
+  vehicleId: zod.string().nullish(),
+  reportedBy: zod.string().nullish(),
+  incidentType: zod.string(),
+  description: zod.string().nullish(),
+  occurredAt: zod.string(),
+  isResolved: zod.boolean().nullish(),
+  resolutionNotes: zod.string().nullish(),
+  mediaUrls: zod.array(zod.string()).nullish(),
+  createdAt: zod.string().nullish(),
+  reporterName: zod.string().nullish(),
+  vehicleLicensePlate: zod.string().nullish(),
+});
+export const PortalListIncidentsResponse = zod.array(
+  PortalListIncidentsResponseItem,
+);
+
+/**
+ * @summary Report a concern (creates an incident of type parent_concern)
+ */
+export const PortalReportConcernBody = zod.object({
+  description: zod.string(),
+  studentId: zod.string().optional(),
 });
 
 /**

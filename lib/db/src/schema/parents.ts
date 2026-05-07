@@ -10,6 +10,7 @@ export const parents = pgTable("parents", {
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   userId: uuid("user_id").references(() => users.id),
   phone: text("phone"),
+  address: text("address"),
 });
 
 export const studentParents = pgTable("student_parents", {

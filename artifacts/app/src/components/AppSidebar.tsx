@@ -5,7 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { setAuthToken } from "@/lib/api";
 import {
   LayoutDashboard, Truck, Route, Users, GraduationCap, CalendarClock,
-  AlertTriangle, Wrench, UserCog, Shield, ChevronDown, LogOut, Bus
+  AlertTriangle, Wrench, UserCog, Shield, ChevronDown, LogOut, Bus,
+  Building2, Home,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -14,18 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/vehicles", label: "Vehicles", icon: Truck },
-  { href: "/drivers", label: "Drivers", icon: Users },
-  { href: "/routes", label: "Routes", icon: Route },
-  { href: "/students", label: "Students", icon: GraduationCap },
-  { href: "/trips", label: "Trips", icon: CalendarClock },
-  { href: "/incidents", label: "Incidents", icon: AlertTriangle },
-  { href: "/maintenance", label: "Maintenance", icon: Wrench },
-  { href: "/team", label: "Team", icon: UserCog },
-];
-
 const adminNavItems = [
   { href: "/admin", label: "Platform Stats", icon: Shield },
   { href: "/admin/tenants", label: "Tenants", icon: Users },
@@ -33,11 +22,53 @@ const adminNavItems = [
   { href: "/admin/audit-log", label: "Audit Log", icon: Shield },
 ];
 
-export function AppSidebar() {
+const staffNavItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/vehicles", label: "Vehicles", icon: Truck },
+  { href: "/drivers", label: "Drivers", icon: Users },
+  { href: "/routes", label: "Routes", icon: Route },
+  { href: "/schools", label: "Schools", icon: Building2 },
+  { href: "/students", label: "Students", icon: GraduationCap },
+  { href: "/parents", label: "Parents", icon: Users },
+  { href: "/trips", label: "Trips", icon: CalendarClock },
+  { href: "/incidents", label: "Incidents", icon: AlertTriangle },
+  { href: "/maintenance", label: "Maintenance", icon: Wrench },
+  { href: "/team", label: "Team", icon: UserCog },
+];
+
+const parentNavItems = [
+  { href: "/portal", label: "My Children", icon: Home },
+];
+
+function NavLink({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) {
   const [location] = useLocation();
+  const isActive = location === href || (href !== "/" && location.startsWith(href + "/"));
+  return (
+    <Link href={href}>
+      <a
+        data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
+        className={cn(
+          "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+          isActive
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        )}
+      >
+        <Icon className="w-4 h-4 flex-shrink-0" />
+        {label}
+      </a>
+    </Link>
+  );
+}
+
+export function AppSidebar() {
   const { user, currentTenant, tenants, logout, login } = useAuth();
   const queryClient = useQueryClient();
   const switchTenant = useSwitchTenant();
+
+  const role = (user as { role?: string } | null)?.role;
+  const isParent = role === "parent";
+  const isStaff = !isParent;
 
   const handleSwitchTenant = (tenantId: string) => {
     switchTenant.mutate(
@@ -98,52 +129,23 @@ export function AppSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location === item.href || location.startsWith(item.href + "/");
-          return (
-            <Link key={item.href} href={item.href}>
-              <a
-                data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {item.label}
-              </a>
-            </Link>
-          );
-        })}
+        {isParent && (
+          <>
+            <div className="px-3 pb-1">
+              <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">Parent Portal</p>
+            </div>
+            {parentNavItems.map(item => <NavLink key={item.href} {...item} />)}
+          </>
+        )}
+
+        {isStaff && staffNavItems.map(item => <NavLink key={item.href} {...item} />)}
 
         {user?.isSuperAdmin && (
           <>
             <div className="px-3 pt-4 pb-1">
               <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">Super Admin</p>
             </div>
-            {adminNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location === item.href;
-              return (
-                <Link key={item.href} href={item.href}>
-                  <a
-                    data-testid={`admin-nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    )}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    {item.label}
-                  </a>
-                </Link>
-              );
-            })}
+            {adminNavItems.map(item => <NavLink key={item.href} {...item} />)}
           </>
         )}
       </nav>
@@ -158,7 +160,9 @@ export function AppSidebar() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sidebar-foreground text-xs font-medium truncate">{user?.fullName ?? user?.email}</p>
-            <p className="text-sidebar-foreground/40 text-xs truncate capitalize">{currentTenant ? "admin" : "no tenant"}</p>
+            <p className="text-sidebar-foreground/40 text-xs truncate capitalize">
+              {role ?? (currentTenant ? "staff" : "no tenant")}
+            </p>
           </div>
         </div>
         <Button

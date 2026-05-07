@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { students, parents, studentParents, users } from "@workspace/db";
-import { eq, and, ilike, or } from "drizzle-orm";
+import { students, parents, studentParents, users, schools } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import {
   CreateStudentBody,
@@ -25,7 +25,23 @@ router.get("/students", async (req, res): Promise<void> => {
   const tenantId = req.user!.tenantId;
   const query = ListStudentsQueryParams.safeParse(req.query);
 
-  let rows = await db.select().from(students).where(eq(students.tenantId, tenantId));
+  let rows = await db
+    .select({
+      id: students.id,
+      tenantId: students.tenantId,
+      firstName: students.firstName,
+      lastName: students.lastName,
+      schoolId: students.schoolId,
+      schoolName: students.schoolName,
+      grade: students.grade,
+      homeStopId: students.homeStopId,
+      boardingTime: students.boardingTime,
+      alightingTime: students.alightingTime,
+      emergencyContact: students.emergencyContact,
+      specialNeeds: students.specialNeeds,
+    })
+    .from(students)
+    .where(eq(students.tenantId, tenantId));
 
   if (query.success && query.data.search) {
     const search = query.data.search.toLowerCase();
@@ -37,7 +53,6 @@ router.get("/students", async (req, res): Promise<void> => {
   }
 
   if (query.success && query.data.routeId) {
-    // Filter by students assigned to stops on this route - simplified
     rows = rows.filter(s => s.homeStopId !== null);
   }
 
@@ -76,6 +91,7 @@ router.get("/students/:studentId", async (req, res): Promise<void> => {
       tenantId: parents.tenantId,
       userId: parents.userId,
       phone: parents.phone,
+      address: parents.address,
       fullName: users.fullName,
       email: users.email,
     })
@@ -136,6 +152,7 @@ router.get("/parents", async (req, res): Promise<void> => {
       tenantId: parents.tenantId,
       userId: parents.userId,
       phone: parents.phone,
+      address: parents.address,
       fullName: users.fullName,
       email: users.email,
     })
@@ -169,6 +186,7 @@ router.get("/parents/:parentId/students", async (req, res): Promise<void> => {
       tenantId: students.tenantId,
       firstName: students.firstName,
       lastName: students.lastName,
+      schoolId: students.schoolId,
       schoolName: students.schoolName,
       grade: students.grade,
       homeStopId: students.homeStopId,

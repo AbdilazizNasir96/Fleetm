@@ -1,6 +1,7 @@
 import { pgTable, text, integer, time, uuid } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants";
 import { stops } from "./stops";
+import { schools } from "./schools";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -9,6 +10,7 @@ export const students = pgTable("students", {
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
+  schoolId: uuid("school_id").references(() => schools.id),
   schoolName: text("school_name"),
   grade: integer("grade"),
   homeStopId: uuid("home_stop_id").references(() => stops.id),

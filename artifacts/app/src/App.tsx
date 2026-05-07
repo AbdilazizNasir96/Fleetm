@@ -16,6 +16,9 @@ import IncidentsPage from "@/pages/incidents";
 import MaintenancePage from "@/pages/maintenance";
 import TeamPage from "@/pages/team";
 import TripDetailPage from "@/pages/trip-detail";
+import SchoolsPage from "@/pages/schools";
+import ParentsPage from "@/pages/parents";
+import PortalPage from "@/pages/portal";
 import { AdminDashboardPage, AdminTenantsPage, AdminUsersPage, AdminAuditLogPage } from "@/pages/admin";
 
 const queryClient = new QueryClient({
@@ -37,7 +40,10 @@ function AppRouter() {
       <Route path="/vehicles" component={VehiclesPage} />
       <Route path="/drivers" component={DriversPage} />
       <Route path="/routes" component={RoutesPage} />
+      <Route path="/schools" component={SchoolsPage} />
       <Route path="/students" component={StudentsPage} />
+      <Route path="/parents" component={ParentsPage} />
+      <Route path="/portal" component={PortalPage} />
       <Route path="/trips" component={TripsPage} />
       <Route path="/trips/:tripId" component={TripDetailPage} />
       <Route path="/incidents" component={IncidentsPage} />

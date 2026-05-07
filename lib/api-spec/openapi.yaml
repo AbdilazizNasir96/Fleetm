@@ -39,6 +39,10 @@ tags:
     description: Super-admin platform management
   - name: invitations
     description: Invitation management
+  - name: schools
+    description: School/district management
+  - name: portal
+    description: Parent self-service portal
 
 paths:
   /healthz:
@@ -919,6 +923,150 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+
+  # ─── SCHOOLS ───
+  /schools:
+    get:
+      operationId: listSchools
+      tags: [schools]
+      summary: List schools for the tenant
+      responses:
+        "200":
+          description: Schools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/School"
+
+    post:
+      operationId: createSchool
+      tags: [schools]
+      summary: Create a school
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSchoolBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+
+  /schools/{schoolId}:
+    patch:
+      operationId: updateSchool
+      tags: [schools]
+      summary: Update a school
+      parameters:
+        - in: path
+          name: schoolId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSchoolBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+
+    delete:
+      operationId: deleteSchool
+      tags: [schools]
+      summary: Delete a school
+      parameters:
+        - in: path
+          name: schoolId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── PARENT PORTAL ───
+  /portal/students:
+    get:
+      operationId: portalListMyStudents
+      tags: [portal]
+      summary: Get students linked to the authenticated parent
+      responses:
+        "200":
+          description: My students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortalStudent"
+
+  /portal/students/{studentId}/trips:
+    get:
+      operationId: portalListStudentTrips
+      tags: [portal]
+      summary: Get upcoming and recent trips for one of my students
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+
+  /portal/incidents:
+    get:
+      operationId: portalListIncidents
+      tags: [portal]
+      summary: Get incidents related to my students
+      responses:
+        "200":
+          description: Incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Incident"
+
+  /portal/concerns:
+    post:
+      operationId: portalReportConcern
+      tags: [portal]
+      summary: Report a concern (creates an incident of type parent_concern)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortalReportConcernBody"
+      responses:
+        "201":
+          description: Concern submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
 
   # ─── TRIPS ───
   /trips:
@@ -1925,6 +2073,53 @@ components:
         pickupWindowEnd:
           type: string
 
+    # ─── SCHOOLS ───
+    School:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+        contactPhone:
+          type: ["string", "null"]
+        contactEmail:
+          type: ["string", "null"]
+      required:
+        - id
+        - tenantId
+        - name
+
+    CreateSchoolBody:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+      required:
+        - name
+
+    UpdateSchoolBody:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+
     # ─── STUDENTS ───
     Student:
       type: object
@@ -1937,6 +2132,8 @@ components:
           type: string
         lastName:
           type: string
+        schoolId:
+          type: ["string", "null"]
         schoolName:
           type: ["string", "null"]
         grade:
@@ -1968,6 +2165,8 @@ components:
           type: string
         lastName:
           type: string
+        schoolId:
+          type: ["string", "null"]
         schoolName:
           type: ["string", "null"]
         grade:
@@ -2000,6 +2199,8 @@ components:
           type: string
         lastName:
           type: string
+        schoolId:
+          type: string
         schoolName:
           type: string
         grade:
@@ -2025,6 +2226,8 @@ components:
           type: string
         lastName:
           type: string
+        schoolId:
+          type: ["string", "null"]
         schoolName:
           type: string
         grade:
@@ -2052,6 +2255,8 @@ components:
           type: ["string", "null"]
         phone:
           type: ["string", "null"]
+        address:
+          type: ["string", "null"]
         fullName:
           type: ["string", "null"]
         email:
@@ -2067,6 +2272,18 @@ components:
           type: string
         phone:
           type: string
+        address:
+          type: string
+
+    UpdateParentBody:
+      type: object
+      properties:
+        phone:
+          type: string
+        address:
+          type: string
+        userId:
+          type: string
 
     LinkStudentBody:
       type: object
@@ -2075,6 +2292,37 @@ components:
           type: string
       required:
         - studentId
+
+    # ─── PORTAL ───
+    PortalStudent:
+      type: object
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        schoolName:
+          type: ["string", "null"]
+        grade:
+          type: ["integer", "null"]
+        specialNeeds:
+          type: ["string", "null"]
+      required:
+        - id
+        - firstName
+        - lastName
+
+    PortalReportConcernBody:
+      type: object
+      properties:
+        description:
+          type: string
+        studentId:
+          type: string
+      required:
+        - description
 
     # ─── TRIPS ───
     Trip:

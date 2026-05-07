@@ -281,11 +281,39 @@ export interface UpdateStopBody {
   pickupWindowEnd?: string;
 }
 
+export interface School {
+  id: string;
+  tenantId: string;
+  name: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  contactPhone?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+}
+
+export interface CreateSchoolBody {
+  name: string;
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+}
+
+export interface UpdateSchoolBody {
+  name?: string;
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+}
+
 export interface Student {
   id: string;
   tenantId: string;
   firstName: string;
   lastName: string;
+  /** @nullable */
+  schoolId?: string | null;
   /** @nullable */
   schoolName?: string | null;
   /** @nullable */
@@ -310,6 +338,8 @@ export interface Parent {
   /** @nullable */
   phone?: string | null;
   /** @nullable */
+  address?: string | null;
+  /** @nullable */
   fullName?: string | null;
   /** @nullable */
   email?: string | null;
@@ -320,6 +350,8 @@ export interface StudentDetail {
   tenantId: string;
   firstName: string;
   lastName: string;
+  /** @nullable */
+  schoolId?: string | null;
   /** @nullable */
   schoolName?: string | null;
   /** @nullable */
@@ -340,6 +372,7 @@ export interface StudentDetail {
 export interface CreateStudentBody {
   firstName: string;
   lastName: string;
+  schoolId?: string;
   schoolName?: string;
   grade?: number;
   homeStopId?: string;
@@ -352,6 +385,8 @@ export interface CreateStudentBody {
 export interface UpdateStudentBody {
   firstName?: string;
   lastName?: string;
+  /** @nullable */
+  schoolId?: string | null;
   schoolName?: string;
   grade?: number;
   /** @nullable */
@@ -365,10 +400,34 @@ export interface UpdateStudentBody {
 export interface CreateParentBody {
   userId?: string;
   phone?: string;
+  address?: string;
+}
+
+export interface UpdateParentBody {
+  phone?: string;
+  address?: string;
+  userId?: string;
 }
 
 export interface LinkStudentBody {
   studentId: string;
+}
+
+export interface PortalStudent {
+  id: string;
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  schoolName?: string | null;
+  /** @nullable */
+  grade?: number | null;
+  /** @nullable */
+  specialNeeds?: string | null;
+}
+
+export interface PortalReportConcernBody {
+  description: string;
+  studentId?: string;
 }
 
 export interface Trip {

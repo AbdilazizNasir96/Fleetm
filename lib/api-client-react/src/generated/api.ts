@@ -30,6 +30,7 @@ import type {
   CreateMaintenanceLogBody,
   CreateParentBody,
   CreateRouteBody,
+  CreateSchoolBody,
   CreateStopBody,
   CreateStudentBody,
   CreateTripBody,
@@ -52,9 +53,12 @@ import type {
   Parent,
   PlatformAuditEntry,
   PlatformStats,
+  PortalReportConcernBody,
+  PortalStudent,
   RegisterBody,
   Route,
   RouteWithStops,
+  School,
   Stop,
   Student,
   StudentDetail,
@@ -69,6 +73,7 @@ import type {
   UpdateMaintenanceLogBody,
   UpdatePassengerBody,
   UpdateRouteBody,
+  UpdateSchoolBody,
   UpdateStopBody,
   UpdateStudentBody,
   UpdateTenantBody,
@@ -3735,6 +3740,664 @@ export const useLinkStudentToParent = <
   TContext
 > => {
   return useMutation(getLinkStudentToParentMutationOptions(options));
+};
+
+/**
+ * @summary List schools for the tenant
+ */
+export const getListSchoolsUrl = () => {
+  return `/api/schools`;
+};
+
+export const listSchools = async (options?: RequestInit): Promise<School[]> => {
+  return customFetch<School[]>(getListSchoolsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSchoolsQueryKey = () => {
+  return [`/api/schools`] as const;
+};
+
+export const getListSchoolsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSchools>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSchools>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSchoolsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSchools>>> = ({
+    signal,
+  }) => listSchools({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSchools>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSchoolsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSchools>>
+>;
+export type ListSchoolsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List schools for the tenant
+ */
+
+export function useListSchools<
+  TData = Awaited<ReturnType<typeof listSchools>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listSchools>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSchoolsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a school
+ */
+export const getCreateSchoolUrl = () => {
+  return `/api/schools`;
+};
+
+export const createSchool = async (
+  createSchoolBody: CreateSchoolBody,
+  options?: RequestInit,
+): Promise<School> => {
+  return customFetch<School>(getCreateSchoolUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSchoolBody),
+  });
+};
+
+export const getCreateSchoolMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSchool>>,
+    TError,
+    { data: BodyType<CreateSchoolBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSchool>>,
+  TError,
+  { data: BodyType<CreateSchoolBody> },
+  TContext
+> => {
+  const mutationKey = ["createSchool"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSchool>>,
+    { data: BodyType<CreateSchoolBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSchool(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSchoolMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSchool>>
+>;
+export type CreateSchoolMutationBody = BodyType<CreateSchoolBody>;
+export type CreateSchoolMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a school
+ */
+export const useCreateSchool = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSchool>>,
+    TError,
+    { data: BodyType<CreateSchoolBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSchool>>,
+  TError,
+  { data: BodyType<CreateSchoolBody> },
+  TContext
+> => {
+  return useMutation(getCreateSchoolMutationOptions(options));
+};
+
+/**
+ * @summary Update a school
+ */
+export const getUpdateSchoolUrl = (schoolId: string) => {
+  return `/api/schools/${schoolId}`;
+};
+
+export const updateSchool = async (
+  schoolId: string,
+  updateSchoolBody: UpdateSchoolBody,
+  options?: RequestInit,
+): Promise<School> => {
+  return customFetch<School>(getUpdateSchoolUrl(schoolId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSchoolBody),
+  });
+};
+
+export const getUpdateSchoolMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSchool>>,
+    TError,
+    { schoolId: string; data: BodyType<UpdateSchoolBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSchool>>,
+  TError,
+  { schoolId: string; data: BodyType<UpdateSchoolBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSchool"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSchool>>,
+    { schoolId: string; data: BodyType<UpdateSchoolBody> }
+  > = (props) => {
+    const { schoolId, data } = props ?? {};
+
+    return updateSchool(schoolId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSchoolMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSchool>>
+>;
+export type UpdateSchoolMutationBody = BodyType<UpdateSchoolBody>;
+export type UpdateSchoolMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a school
+ */
+export const useUpdateSchool = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSchool>>,
+    TError,
+    { schoolId: string; data: BodyType<UpdateSchoolBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSchool>>,
+  TError,
+  { schoolId: string; data: BodyType<UpdateSchoolBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSchoolMutationOptions(options));
+};
+
+/**
+ * @summary Delete a school
+ */
+export const getDeleteSchoolUrl = (schoolId: string) => {
+  return `/api/schools/${schoolId}`;
+};
+
+export const deleteSchool = async (
+  schoolId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteSchoolUrl(schoolId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteSchoolMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSchool>>,
+    TError,
+    { schoolId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteSchool>>,
+  TError,
+  { schoolId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteSchool"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteSchool>>,
+    { schoolId: string }
+  > = (props) => {
+    const { schoolId } = props ?? {};
+
+    return deleteSchool(schoolId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteSchoolMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteSchool>>
+>;
+
+export type DeleteSchoolMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a school
+ */
+export const useDeleteSchool = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSchool>>,
+    TError,
+    { schoolId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteSchool>>,
+  TError,
+  { schoolId: string },
+  TContext
+> => {
+  return useMutation(getDeleteSchoolMutationOptions(options));
+};
+
+/**
+ * @summary Get students linked to the authenticated parent
+ */
+export const getPortalListMyStudentsUrl = () => {
+  return `/api/portal/students`;
+};
+
+export const portalListMyStudents = async (
+  options?: RequestInit,
+): Promise<PortalStudent[]> => {
+  return customFetch<PortalStudent[]>(getPortalListMyStudentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getPortalListMyStudentsQueryKey = () => {
+  return [`/api/portal/students`] as const;
+};
+
+export const getPortalListMyStudentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof portalListMyStudents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof portalListMyStudents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPortalListMyStudentsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof portalListMyStudents>>
+  > = ({ signal }) => portalListMyStudents({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof portalListMyStudents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type PortalListMyStudentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof portalListMyStudents>>
+>;
+export type PortalListMyStudentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get students linked to the authenticated parent
+ */
+
+export function usePortalListMyStudents<
+  TData = Awaited<ReturnType<typeof portalListMyStudents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof portalListMyStudents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getPortalListMyStudentsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get upcoming and recent trips for one of my students
+ */
+export const getPortalListStudentTripsUrl = (studentId: string) => {
+  return `/api/portal/students/${studentId}/trips`;
+};
+
+export const portalListStudentTrips = async (
+  studentId: string,
+  options?: RequestInit,
+): Promise<Trip[]> => {
+  return customFetch<Trip[]>(getPortalListStudentTripsUrl(studentId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getPortalListStudentTripsQueryKey = (studentId: string) => {
+  return [`/api/portal/students/${studentId}/trips`] as const;
+};
+
+export const getPortalListStudentTripsQueryOptions = <
+  TData = Awaited<ReturnType<typeof portalListStudentTrips>>,
+  TError = ErrorType<unknown>,
+>(
+  studentId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof portalListStudentTrips>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getPortalListStudentTripsQueryKey(studentId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof portalListStudentTrips>>
+  > = ({ signal }) =>
+    portalListStudentTrips(studentId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!studentId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof portalListStudentTrips>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type PortalListStudentTripsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof portalListStudentTrips>>
+>;
+export type PortalListStudentTripsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get upcoming and recent trips for one of my students
+ */
+
+export function usePortalListStudentTrips<
+  TData = Awaited<ReturnType<typeof portalListStudentTrips>>,
+  TError = ErrorType<unknown>,
+>(
+  studentId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof portalListStudentTrips>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getPortalListStudentTripsQueryOptions(
+    studentId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get incidents related to my students
+ */
+export const getPortalListIncidentsUrl = () => {
+  return `/api/portal/incidents`;
+};
+
+export const portalListIncidents = async (
+  options?: RequestInit,
+): Promise<Incident[]> => {
+  return customFetch<Incident[]>(getPortalListIncidentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getPortalListIncidentsQueryKey = () => {
+  return [`/api/portal/incidents`] as const;
+};
+
+export const getPortalListIncidentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof portalListIncidents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof portalListIncidents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPortalListIncidentsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof portalListIncidents>>
+  > = ({ signal }) => portalListIncidents({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof portalListIncidents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type PortalListIncidentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof portalListIncidents>>
+>;
+export type PortalListIncidentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get incidents related to my students
+ */
+
+export function usePortalListIncidents<
+  TData = Awaited<ReturnType<typeof portalListIncidents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof portalListIncidents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getPortalListIncidentsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Report a concern (creates an incident of type parent_concern)
+ */
+export const getPortalReportConcernUrl = () => {
+  return `/api/portal/concerns`;
+};
+
+export const portalReportConcern = async (
+  portalReportConcernBody: PortalReportConcernBody,
+  options?: RequestInit,
+): Promise<Incident> => {
+  return customFetch<Incident>(getPortalReportConcernUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(portalReportConcernBody),
+  });
+};
+
+export const getPortalReportConcernMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof portalReportConcern>>,
+    TError,
+    { data: BodyType<PortalReportConcernBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof portalReportConcern>>,
+  TError,
+  { data: BodyType<PortalReportConcernBody> },
+  TContext
+> => {
+  const mutationKey = ["portalReportConcern"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof portalReportConcern>>,
+    { data: BodyType<PortalReportConcernBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return portalReportConcern(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PortalReportConcernMutationResult = NonNullable<
+  Awaited<ReturnType<typeof portalReportConcern>>
+>;
+export type PortalReportConcernMutationBody = BodyType<PortalReportConcernBody>;
+export type PortalReportConcernMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Report a concern (creates an incident of type parent_concern)
+ */
+export const usePortalReportConcern = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof portalReportConcern>>,
+    TError,
+    { data: BodyType<PortalReportConcernBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof portalReportConcern>>,
+  TError,
+  { data: BodyType<PortalReportConcernBody> },
+  TContext
+> => {
+  return useMutation(getPortalReportConcernMutationOptions(options));
 };
 
 /**
