@@ -15,6 +15,7 @@ import TripsPage from "@/pages/trips";
 import IncidentsPage from "@/pages/incidents";
 import MaintenancePage from "@/pages/maintenance";
 import TeamPage from "@/pages/team";
+import TripDetailPage from "@/pages/trip-detail";
 import { AdminDashboardPage, AdminTenantsPage, AdminUsersPage, AdminAuditLogPage } from "@/pages/admin";
 
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ function AppRouter() {
       <Route path="/routes" component={RoutesPage} />
       <Route path="/students" component={StudentsPage} />
       <Route path="/trips" component={TripsPage} />
+      <Route path="/trips/:tripId" component={TripDetailPage} />
       <Route path="/incidents" component={IncidentsPage} />
       <Route path="/maintenance" component={MaintenancePage} />
       <Route path="/team" component={TeamPage} />

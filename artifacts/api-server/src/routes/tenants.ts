@@ -17,6 +17,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import { signToken } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { sendEmail, buildInvitationEmail } from "../lib/email";
 
 const router = Router();
 
@@ -177,7 +178,9 @@ router.post("/invitations", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+
   const tenantId = req.user!.tenantId;
+  const inviterId = req.user!.userId;
   const token = crypto.randomBytes(32).toString("hex");
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -190,11 +193,27 @@ router.post("/invitations", async (req, res): Promise<void> => {
     expiresAt,
   }).returning();
 
-  const isDev = process.env.NODE_ENV !== "production";
-  const sendgridKey = process.env.SENDGRID_API_KEY;
-  if (!sendgridKey || isDev) {
-    logger.info({ email: parsed.data.email, token }, "Invitation token (dev mode - no email sent)");
-  }
+  const [inviter] = await db
+    .select({ fullName: users.fullName })
+    .from(users)
+    .where(eq(users.id, inviterId));
+
+  const [tenant] = await db
+    .select({ name: tenants.name })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId));
+
+  const emailOpts = buildInvitationEmail({
+    inviteeEmail: parsed.data.email,
+    inviterName: inviter?.fullName ?? "Your administrator",
+    tenantName: tenant?.name ?? "your organization",
+    role: parsed.data.role,
+    invitationToken: token,
+  });
+
+  sendEmail(emailOpts).catch(err =>
+    logger.error({ err, email: parsed.data.email }, "Failed to send invitation email")
+  );
 
   res.status(201).json({
     ...invitation,

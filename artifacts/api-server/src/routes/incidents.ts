@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { incidents, users, vehicles } from "@workspace/db";
+import { incidents, users, vehicles, userTenants } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { upload, storageDriver, getUploadUrl, saveLocalFile, ensureUploadDir } from "../lib/upload";
+import { sendEmail, buildIncidentAlertEmail } from "../lib/email";
+import { logger } from "../lib/logger";
 import {
   CreateIncidentBody,
   UpdateIncidentBody,
@@ -84,11 +86,54 @@ router.post("/incidents", async (req, res): Promise<void> => {
     longitude,
     occurredAt: new Date(occurredAt),
   }).returning();
-  res.status(201).json({
+  const responseBody = {
     ...incident,
     occurredAt: incident.occurredAt?.toISOString() ?? null,
     createdAt: incident.createdAt?.toISOString() ?? null,
-  });
+  };
+  res.status(201).json(responseBody);
+
+  // Notify tenant admins — fire and forget
+  (async () => {
+    try {
+      const [reporter] = await db
+        .select({ fullName: users.fullName })
+        .from(users)
+        .where(eq(users.id, reportedBy));
+
+      let vehiclePlate: string | null = null;
+      if (parsed.data.vehicleId) {
+        const [v] = await db
+          .select({ licensePlate: vehicles.licensePlate })
+          .from(vehicles)
+          .where(eq(vehicles.id, parsed.data.vehicleId));
+        vehiclePlate = v?.licensePlate ?? null;
+      }
+
+      const adminRows = await db
+        .select({ email: users.email, fullName: users.fullName })
+        .from(userTenants)
+        .innerJoin(users, eq(userTenants.userId, users.id))
+        .where(and(eq(userTenants.tenantId, tenantId), eq(userTenants.role, "admin")));
+
+      await Promise.allSettled(
+        adminRows.map(admin =>
+          sendEmail(buildIncidentAlertEmail({
+            adminEmail: admin.email,
+            adminName: admin.fullName ?? null,
+            reporterName: reporter?.fullName ?? null,
+            incidentType: incident.incidentType,
+            description: incident.description,
+            vehiclePlate,
+            occurredAt: incident.occurredAt?.toISOString() ?? new Date().toISOString(),
+            incidentId: incident.id,
+          }))
+        )
+      );
+    } catch (err) {
+      logger.error({ err }, "Failed to send incident alert emails");
+    }
+  })();
 });
 
 router.get("/incidents/:incidentId", async (req, res): Promise<void> => {

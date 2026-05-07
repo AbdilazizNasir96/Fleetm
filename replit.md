@@ -46,9 +46,12 @@ A production-ready multi-tenant SaaS platform for school student transportation 
 
 Multi-tenant school transportation management with:
 - **Admin portal**: vehicles, drivers, routes/stops, students, trips, incidents, maintenance logs, team management
+- **Trip detail page**: `/trips/:tripId` — full trip info, status transitions, passenger boarding/alighting, live GPS tracker card
 - **Super-admin dashboard**: manage all tenants, users, platform audit log
 - **Role-based access**: `super_admin`, `admin`, `dispatcher`, `driver`, `parent`
-- **Real-time tracking**: Socket.IO stubs ready for GPS trip location updates
+- **Real-time tracking**: Socket.IO + Redis adapter; `TripTracker` component + `useTripLocation` hook; driver location broadcast via `emitTripLocation`
+- **Email notifications**: SendGrid (or dev-mode pino fallback) for invitation, welcome, and incident alert emails; fires async post-response
+- **File uploads**: Azure Blob Storage SAS URLs (or local fallback) for incident media; `POST /api/incidents/upload-url` and `POST /api/incidents/upload-local`
 - **Stripe billing stubs**: plan/subscription fields on tenant, ready for payment integration
 
 ## User preferences
@@ -70,3 +73,7 @@ Multi-tenant school transportation management with:
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
 - DB schema: `lib/db/src/schema/index.ts`
 - OpenAPI spec: `lib/api-spec/openapi.yaml`
+- Email service: `artifacts/api-server/src/lib/email.ts` — set `SENDGRID_API_KEY` + `SENDGRID_FROM_EMAIL` for real sends
+- Socket.IO: `artifacts/api-server/src/lib/socket.ts` — set `REDIS_URL` for multi-instance pub/sub
+- File upload: `artifacts/api-server/src/lib/upload.ts` — set `AZURE_STORAGE_*` env vars for Blob Storage
+- Frontend socket hooks: `artifacts/app/src/lib/useSocket.ts`

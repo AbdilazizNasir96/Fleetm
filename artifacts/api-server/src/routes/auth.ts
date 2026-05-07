@@ -4,6 +4,8 @@ import { db } from "@workspace/db";
 import { users, userTenants, tenants } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { signToken, requireAuth } from "../lib/auth";
+import { logger } from "../lib/logger";
+import { sendEmail, buildWelcomeEmail } from "../lib/email";
 import {
   RegisterUserBody,
   LoginUserBody,
@@ -66,6 +68,14 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     role: "admin",
     isSuperAdmin: false,
   });
+
+  sendEmail(buildWelcomeEmail({
+    email: newUser.email,
+    fullName: newUser.fullName,
+    tenantName: newTenant.name,
+  })).catch(err =>
+    logger.error({ err, email: newUser.email }, "Failed to send welcome email")
+  );
 
   res.status(201).json({
     token,
