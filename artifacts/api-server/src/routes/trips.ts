@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { trips, tripPassengers, routes, drivers, vehicles, users, students } from "@workspace/db";
-import { eq, and, count } from "drizzle-orm";
+import { trips, tripPassengers, routes, drivers, vehicles, users, students, tripLocations } from "@workspace/db";
+import { eq, and, count, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { emitTripLocation } from "../lib/socket";
 import {
   CreateTripBody,
   UpdateTripBody,
@@ -14,6 +15,7 @@ import {
   UpdatePassengerBody,
   ListTripsQueryParams,
 } from "@workspace/api-zod";
+import { z } from "zod";
 
 const router = Router();
 
@@ -192,6 +194,100 @@ router.patch("/trips/:tripId", async (req, res): Promise<void> => {
     actualStart: trip.actualStart?.toISOString() ?? null,
     actualEnd: trip.actualEnd?.toISOString() ?? null,
     createdAt: trip.createdAt?.toISOString() ?? null,
+  });
+});
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const LocationBody = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  speedKmh: z.number().min(0).optional(),
+  heading: z.number().int().min(0).max(359).optional(),
+});
+
+router.post("/trips/:tripId/location", async (req, res): Promise<void> => {
+  const tripId = req.params["tripId"];
+  if (!tripId || !UUID_RE.test(tripId)) {
+    res.status(400).json({ error: "Invalid tripId" });
+    return;
+  }
+  const parsed = LocationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const tenantId = req.user!.tenantId;
+  const [trip] = await db
+    .select({ id: trips.id })
+    .from(trips)
+    .where(and(eq(trips.id, tripId), eq(trips.tenantId, tenantId)));
+
+  if (!trip) {
+    res.status(404).json({ error: "Trip not found" });
+    return;
+  }
+
+  const { latitude, longitude, speedKmh, heading } = parsed.data;
+  const [loc] = await db.insert(tripLocations).values({
+    tripId,
+    latitude,
+    longitude,
+    speedKmh: speedKmh !== undefined ? String(speedKmh) : undefined,
+    heading,
+  }).returning();
+
+  const payload = {
+    tripId,
+    latitude,
+    longitude,
+    speedKmh,
+    heading,
+    recordedAt: loc.recordedAt.toISOString(),
+  };
+
+  emitTripLocation(payload);
+
+  res.status(201).json(payload);
+});
+
+router.get("/trips/:tripId/location/latest", async (req, res): Promise<void> => {
+  const tripId = req.params["tripId"];
+  if (!tripId || !UUID_RE.test(tripId)) {
+    res.status(400).json({ error: "Invalid tripId" });
+    return;
+  }
+  const tenantId = req.user!.tenantId;
+  const [trip] = await db
+    .select({ id: trips.id })
+    .from(trips)
+    .where(and(eq(trips.id, tripId), eq(trips.tenantId, tenantId)));
+
+  if (!trip) {
+    res.status(404).json({ error: "Trip not found" });
+    return;
+  }
+
+  const [loc] = await db
+    .select()
+    .from(tripLocations)
+    .where(eq(tripLocations.tripId, tripId))
+    .orderBy(desc(tripLocations.recordedAt))
+    .limit(1);
+
+  if (!loc) {
+    res.json(null);
+    return;
+  }
+
+  res.json({
+    tripId,
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    speedKmh: loc.speedKmh ? Number(loc.speedKmh) : undefined,
+    heading: loc.heading ?? undefined,
+    recordedAt: loc.recordedAt.toISOString(),
   });
 });
 

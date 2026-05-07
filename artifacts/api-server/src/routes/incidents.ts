@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { incidents, users, vehicles } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { upload, storageDriver, getUploadUrl, saveLocalFile, ensureUploadDir } from "../lib/upload";
 import {
   CreateIncidentBody,
   UpdateIncidentBody,
@@ -10,6 +11,8 @@ import {
   UpdateIncidentParams,
   ListIncidentsQueryParams,
 } from "@workspace/api-zod";
+
+void ensureUploadDir();
 
 const router = Router();
 
@@ -156,5 +159,39 @@ router.patch("/incidents/:incidentId", async (req, res): Promise<void> => {
     createdAt: incident.createdAt?.toISOString() ?? null,
   });
 });
+
+router.post("/incidents/upload-url", async (req, res): Promise<void> => {
+  const { fileName, contentType } = req.body as { fileName?: string; contentType?: string };
+  if (!fileName || !contentType) {
+    res.status(400).json({ error: "fileName and contentType are required" });
+    return;
+  }
+  const tenantId = req.user!.tenantId;
+  const blobName = `${tenantId}/${Date.now()}-${fileName}`;
+  try {
+    const result = await getUploadUrl(blobName, contentType);
+    res.json(result);
+  } catch (err) {
+    req.log.error({ err }, "Failed to generate upload URL");
+    res.status(500).json({ error: "Failed to generate upload URL" });
+  }
+});
+
+if (storageDriver === "local") {
+  router.post("/incidents/upload-local", upload.single("file"), async (req, res): Promise<void> => {
+    const { blobName } = req.body as { blobName?: string };
+    if (!blobName || !req.file) {
+      res.status(400).json({ error: "blobName and file are required" });
+      return;
+    }
+    try {
+      await saveLocalFile(blobName, req.file.buffer);
+      res.json({ blobUrl: `/api/uploads/${blobName}` });
+    } catch (err) {
+      req.log.error({ err }, "Failed to save local file");
+      res.status(500).json({ error: "Failed to save file" });
+    }
+  });
+}
 
 export default router;
