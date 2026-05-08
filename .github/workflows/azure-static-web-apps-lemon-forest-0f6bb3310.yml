@@ -26,12 +26,12 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_FOREST_0F6BB3310 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "artifacts/app"
+          app_location: "/"
           api_location: ""
-          output_location: "dist"
+          output_location: "artifacts/app/dist"
         env:
           PRE_BUILD_COMMAND: "npm install -g pnpm"
-          CUSTOM_BUILD_COMMAND: "pnpm install --frozen-lockfile && pnpm run build"
+          CUSTOM_BUILD_COMMAND: "cd artifacts/app && pnpm install --ignore-scripts && pnpm run build && cd ../.."
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
