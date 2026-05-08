@@ -26,7 +26,7 @@ app.use(
     },
   }),
 );
-
+//Foce redeploy
 // 🟢 REPLACE the original `app.use(cors());` with this:
 app.use(cors({
   origin: [
