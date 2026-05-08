@@ -26,7 +26,16 @@ app.use(
     },
   }),
 );
-app.use(cors());
+
+// 🟢 REPLACE the original `app.use(cors());` with this:
+app.use(cors({
+  origin: [
+    'https://digivant-solutions-app.vercel.app',
+    'http://localhost:5175'
+  ],
+  credentials: false,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
