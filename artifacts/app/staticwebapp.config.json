@@ -1,11 +1,4 @@
 {
-  "build": {
-    "buildCommand": "pnpm install --frozen-lockfile && pnpm build",
-    "outputLocation": "dist",
-    "installDependencies": false
-  }
-},
-{
     "build": {
         "installDependencies": false,
         "appBuildCommand": "corepack enable && pnpm install --frozen-lockfile && pnpm run build"
