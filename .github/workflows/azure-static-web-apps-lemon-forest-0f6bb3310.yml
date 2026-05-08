@@ -34,6 +34,7 @@ jobs:
           CUSTOM_BUILD_COMMAND: "cd artifacts/app && pnpm install --ignore-scripts && pnpm run build && cd ../.."
           PORT: "3000"
           VITE_API_BASE_URL: "https://digivant-backend.azurewebsites.net"
+          BASE_PATH: "/"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
