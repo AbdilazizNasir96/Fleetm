@@ -3,6 +3,7 @@ name: Deploy Backend to Azure
 on:
   push:
     branches: [ digivant-Solutions ]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -27,8 +28,14 @@ jobs:
           pnpm run build
           cd ../..
 
+      # 🆕 ADD THIS STEP: Login to Azure using the Publish Profile
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+
       - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: 'digivant-backend'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
