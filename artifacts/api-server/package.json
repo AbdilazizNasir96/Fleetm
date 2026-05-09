@@ -2,6 +2,7 @@
   "name": "@workspace/api-server",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@10.0.0",
   "type": "module",
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
@@ -9,6 +10,8 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  ...
+}
   "dependencies": {
     "@azure/storage-blob": "^12.31.0",
     "@sendgrid/mail": "^8.1.6",
