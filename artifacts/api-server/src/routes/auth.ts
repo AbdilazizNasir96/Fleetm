@@ -7,36 +7,32 @@ import { signToken, requireAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { sendEmail, buildWelcomeEmail } from "../lib/email";
 
-type RegisterBody = {
-  email: string;
-  password: string;
-  fullName: string;
-  tenantName: string;
-  tenantSlug: string;
-};
-
-type LoginBody = {
-  email: string;
-  password: string;
-};
-
-type SwitchTenantBody = {
-  tenantId: string;
-};
-
-const router = Router();
-
-// Helper to validate required fields
-function validateRegister(body: any): RegisterBody | null {
+// ----- Manual validation without Zod -----
+function validateRegister(body: any) {
   const { email, password, fullName, tenantName, tenantSlug } = body;
   if (!email || !password || !fullName || !tenantName || !tenantSlug) return null;
   return { email, password, fullName, tenantName, tenantSlug };
 }
 
-router.post("/auth/register", async (req, res): Promise<void> => {
+function validateLogin(body: any) {
+  const { email, password } = body;
+  if (!email || !password) return null;
+  return { email, password };
+}
+
+function validateSwitchTenant(body: any) {
+  const { tenantId } = body;
+  if (!tenantId) return null;
+  return { tenantId };
+}
+// ----------------------------------------
+
+const router = Router();
+
+router.post("/auth/register", async (req, res) => {
   const data = validateRegister(req.body);
   if (!data) {
-    res.status(400).json({ error: "Missing required fields: email, password, fullName, tenantName, tenantSlug" });
+    res.status(400).json({ error: "Missing required fields" });
     return;
   }
 
@@ -121,13 +117,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   });
 });
 
-function validateLogin(body: any): LoginBody | null {
-  const { email, password } = body;
-  if (!email || !password) return null;
-  return { email, password };
-}
-
-router.post("/auth/login", async (req, res): Promise<void> => {
+router.post("/auth/login", async (req, res) => {
   const data = validateLogin(req.body);
   if (!data) {
     res.status(400).json({ error: "Missing email or password" });
@@ -209,11 +199,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/auth/logout", (_req, res): void => {
+router.post("/auth/logout", (_req, res) => {
   res.sendStatus(204);
 });
 
-router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
+router.get("/auth/me", requireAuth, async (req, res) => {
   const { userId, tenantId } = req.user!;
 
   const [user] = await db.select().from(users).where(eq(users.id, userId));
@@ -271,13 +261,7 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   });
 });
 
-function validateSwitchTenant(body: any): SwitchTenantBody | null {
-  const { tenantId } = body;
-  if (!tenantId) return null;
-  return { tenantId };
-}
-
-router.post("/auth/switch-tenant", requireAuth, async (req, res): Promise<void> => {
+router.post("/auth/switch-tenant", requireAuth, async (req, res) => {
   const data = validateSwitchTenant(req.body);
   if (!data) {
     res.status(400).json({ error: "Missing tenantId" });
