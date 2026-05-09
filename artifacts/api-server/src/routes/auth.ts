@@ -6,22 +6,41 @@ import { eq, and } from "drizzle-orm";
 import { signToken, requireAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { sendEmail, buildWelcomeEmail } from "../lib/email";
-import {
-  RegisterUserBody,
-  LoginUserBody,
-  SwitchTenantBody,
-} from "@workspace/api-zod";
+
+type RegisterBody = {
+  email: string;
+  password: string;
+  fullName: string;
+  tenantName: string;
+  tenantSlug: string;
+};
+
+type LoginBody = {
+  email: string;
+  password: string;
+};
+
+type SwitchTenantBody = {
+  tenantId: string;
+};
 
 const router = Router();
 
+// Helper to validate required fields
+function validateRegister(body: any): RegisterBody | null {
+  const { email, password, fullName, tenantName, tenantSlug } = body;
+  if (!email || !password || !fullName || !tenantName || !tenantSlug) return null;
+  return { email, password, fullName, tenantName, tenantSlug };
+}
+
 router.post("/auth/register", async (req, res): Promise<void> => {
-  const parsed = RegisterUserBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+  const data = validateRegister(req.body);
+  if (!data) {
+    res.status(400).json({ error: "Missing required fields: email, password, fullName, tenantName, tenantSlug" });
     return;
   }
 
-  const { email, password, fullName, tenantName, tenantSlug } = parsed.data;
+  const { email, password, fullName, tenantName, tenantSlug } = data;
 
   const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
   if (existingUser) {
@@ -102,14 +121,20 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   });
 });
 
+function validateLogin(body: any): LoginBody | null {
+  const { email, password } = body;
+  if (!email || !password) return null;
+  return { email, password };
+}
+
 router.post("/auth/login", async (req, res): Promise<void> => {
-  const parsed = LoginUserBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+  const data = validateLogin(req.body);
+  if (!data) {
+    res.status(400).json({ error: "Missing email or password" });
     return;
   }
 
-  const { email, password } = parsed.data;
+  const { email, password } = data;
 
   const [user] = await db.select().from(users).where(eq(users.email, email));
   if (!user) {
@@ -246,14 +271,20 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   });
 });
 
+function validateSwitchTenant(body: any): SwitchTenantBody | null {
+  const { tenantId } = body;
+  if (!tenantId) return null;
+  return { tenantId };
+}
+
 router.post("/auth/switch-tenant", requireAuth, async (req, res): Promise<void> => {
-  const parsed = SwitchTenantBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+  const data = validateSwitchTenant(req.body);
+  if (!data) {
+    res.status(400).json({ error: "Missing tenantId" });
     return;
   }
 
-  const { tenantId } = parsed.data;
+  const { tenantId } = data;
   const userId = req.user!.userId;
   const isSuperAdmin = req.user!.isSuperAdmin;
 
