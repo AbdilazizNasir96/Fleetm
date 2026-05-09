@@ -10,7 +10,7 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  ...
+  
 }
   "dependencies": {
     "@azure/storage-blob": "^12.31.0",
