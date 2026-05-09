@@ -1,29 +1,16 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
-import * as pinoHttp from "pino-http";   // ✅ namespace import
 import router from "./routes";
-import { logger } from "./lib/logger";
 import { uploadDir, storageDriver } from "./lib/upload";
 
 const app: Express = express();
 
-app.use(
-  pinoHttp.default({
-    logger,
-    serializers: {
-      req: (req: any) => ({
-        id: req.id,
-        method: req.method,
-        url: req.url?.split("?")[0],
-      }),
-      res: (res: any) => ({
-        statusCode: res.statusCode,
-      }),
-    },
-  })
-);
+// Simple logging middleware (replaces pino-http)
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
-// Force redeploy
 app.use(
   cors({
     origin: [
@@ -44,8 +31,7 @@ if (storageDriver === "local") {
 app.use("/api", router);
 
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
-  req.log?.error({ err }, "Unhandled error");
-  logger.error({ err, url: req.url }, "Unhandled error");
+  console.error("Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 });
 
