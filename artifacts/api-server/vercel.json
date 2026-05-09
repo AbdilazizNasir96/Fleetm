@@ -1,14 +1,16 @@
 {
-  "builds": [
-    {
-      "src": "src/index.ts",
-      "use": "@vercel/node"
+  "installCommand": "corepack enable && pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "dist/index.mjs": {
+      "includeFiles": "dist/**"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/index.ts"
+      "dest": "/dist/index.mjs"
     }
   ]
 }
