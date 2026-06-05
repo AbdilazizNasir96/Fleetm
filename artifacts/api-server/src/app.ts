@@ -13,10 +13,13 @@ app.use((req, res, next) => {
 
 app.use(
   cors({
-    origin: [
-      "https://digivant-solutions-app.vercel.app",
-      "http://localhost:5175",
-    ],
+    origin: process.env.NODE_ENV === "production"
+      ? (process.env.ALLOWED_ORIGINS?.split(',') || [])
+      : [
+          "https://digivant-solutions-app.vercel.app",
+          "http://localhost:5173",
+          "http://localhost:5175",
+        ],
     credentials: false,
   })
 );
