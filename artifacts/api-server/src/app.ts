@@ -17,6 +17,7 @@ app.use(
       ? (process.env.ALLOWED_ORIGINS?.split(',') || [])
       : [
           "https://digivant-solutions-app.vercel.app",
+          "https://fleetm-app.vercel.app",
           "http://localhost:5173",
           "http://localhost:5175",
         ],
