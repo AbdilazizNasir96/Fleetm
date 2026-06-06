@@ -216,3 +216,38 @@ Tenant records include `plan` and `subscription` fields. Full Stripe integration
 - **Shared proxy**: API at `/api` and frontend at `/` are served through a single reverse proxy — no Vite proxy config is needed
 - **bcrypt**: password hashing uses the `bcrypt` package
 - **Logging**: the API server uses `pino` — never use `console.log` in server code; use `req.log` in route handlers and the singleton `logger` elsewhere
+
+---
+
+## Deployment
+
+Ready to deploy your application to production? We've got you covered!
+
+### 📚 Deployment Guides
+
+- **[Quick Start Guide](./DEPLOYMENT_QUICKSTART.md)** - Deploy in 15 minutes
+- **[Complete Deployment Guide](./DEPLOYMENT_GUIDE.md)** - Detailed step-by-step instructions
+
+### 🎯 Recommended Stack
+
+- **Backend**: [Render.com](https://render.com) - Easy Node.js hosting with PostgreSQL
+- **Frontend**: [Vercel](https://vercel.com) - Optimized for React/Vite apps
+
+### 📦 What's Included
+
+- Pre-configured `render.yaml` for backend deployment
+- Pre-configured `vercel.json` for frontend deployment
+- Environment variable templates
+- CORS configuration guide
+- Troubleshooting tips
+- Cost estimates
+
+### 🚀 Quick Deploy Links
+
+**Backend (Render)**:
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com)
+
+**Frontend (Vercel)**:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+
+See the guides above for detailed instructions!

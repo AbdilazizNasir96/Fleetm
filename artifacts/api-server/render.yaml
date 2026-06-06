@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: digivant-api
+    runtime: node
+    region: oregon # Change to your preferred region
+    plan: free # or starter/standard depending on your needs
+    buildCommand: pnpm install && pnpm run build
+    startCommand: node --enable-source-maps ./dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false # Set this in Render dashboard
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        sync: false
+      - key: AZURE_STORAGE_CONNECTION_STRING
+        sync: false
+      - key: AZURE_STORAGE_CONTAINER_NAME
+        value: tnw-uploads
+      - key: REDIS_URL
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /api/health

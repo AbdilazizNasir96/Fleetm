@@ -1,9 +1,17 @@
 {
-  "buildCommand": "pnpm build",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "devCommand": "pnpm dev",
-  "installCommand": "pnpm install",
   "framework": "vite",
+  "installCommand": "pnpm install",
+  "devCommand": "pnpm run dev",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
